@@ -17,38 +17,7 @@ import scala.annotation.tailrec
  * Created with ♥ in Amsterdam
  */
 object mandelbrot {
-
-
-
-
-  class MandelbrotAlgo(maxIterations:Int) {
-
-    def iterate(c: Complex, bailout: Int): Int = {
-
-      @tailrec
-      def run(z: Complex, iter: Int): Int =
-        if (iter >= maxIterations ||  z.squaredAbs > bailout)
-          iter
-        else
-          run(Complex(1, 0) * z * z + c, iter + 1)
-
-      run(Complex.zero, 0)
-    }
-
-    def getColor(iter: Int): Color = {
-      if (iter == maxIterations) return Color.Black
-
-      val c = 3 * math.log(iter) / math.log(maxIterations - 1.0)
-      if (c < 1) Color.rgb((255 * c).toInt, 0, 0)
-      else if (c < 2) Color.rgb(255, (255 * (c - 1)).toInt, 0)
-      else Color.rgb(255, 255, (255 * (c -  2)).toInt)
-    }
-  }
-
-  object MandelbrotAlgo {
-    def apply(nrIterations: Int) = new MandelbrotAlgo(nrIterations)
-  }
-
+  
   def computeColor(x: Int, y: Int, frame: Frame, complexRectangle: ComplexRectangle, mandelbrot: MandelbrotAlgo): ZIO[Any, Nothing, ColoredPoint] = for {
     iter  <- ZIO.effectTotal(mandelbrot.iterate(complexRectangle.pixelToComplex(frame)(x, y),  8))
     color <- ZIO.succeed(mandelbrot.getColor(iter))
@@ -99,5 +68,5 @@ object MandelbrotFX extends JFXApp { self =>
     override val scanvas: SCanvas = self.canvas
   }
 
-  rts.unsafeRun (mandelbrot.program.provide(env))
+  rts.unsafeRun (algo.program.provide(env))
 }
