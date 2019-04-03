@@ -20,18 +20,21 @@ object FractAlgo {
     def iterate(c: Complex, bailout: Int, maxIterations: Int): ZIO[R, Nothing, Int]
   }
 
-  trait MandelbrotAlgo extends Service[Any] {
-    def iterate(c: Complex, bailout: Int, maxIterations: Int): ZIO[Any, Nothing, Int] = {
+  trait MandelbrotAlgo extends FractAlgo {
+    def service: Service[Any] = new Service[Any] {
+      def iterate(c: Complex, bailout: Int, maxIterations: Int): ZIO[Any, Nothing, Int] = {
 
-      @tailrec
-      def run(z: Complex, iter: Int): Int =
-        if (iter >= maxIterations ||  z.squaredAbs > bailout)
-          iter
-        else
-          run(Complex(1, 0) * z * z + c, iter + 1)
+        @tailrec
+        def run(z: Complex, iter: Int): Int =
+          if (iter >= maxIterations ||  z.squaredAbs > bailout)
+            iter
+          else
+            run(Complex(1, 0) * z * z + c, iter + 1)
 
-      ZIO.effectTotal(run(Complex.zero, 0))
+        ZIO.effectTotal(run(Complex.zero, 0))
+      }
     }
+
   }
 
   trait JuliaAlgo extends Service[Any] {

@@ -2,7 +2,7 @@ package io.tuliplogic.fractals.canvas
 
 import io.tuliplogic.fractals.ColoredPoint
 import scalafx.scene.canvas.{Canvas => SCanvas}
-import scalaz.zio.{UIO, ZIO}
+import scalaz.zio.ZIO
 
 /**
   *
@@ -21,9 +21,8 @@ object Canvas {
   }
 
   trait CanvasLive extends Canvas {
-    val scanvas: SCanvas
 
-    val canvas = new Canvas.Service[SCanvas] { //TODO: maybe ZIO[SCanvas, Nothing, Unit]
+    val canvas = new Canvas.Service[SCanvas] {
       override def drawPoint(coloredPoint: ColoredPoint): ZIO[SCanvas, Nothing, Unit] = {
         def setColor: ZIO[SCanvas, Nothing, Unit] = ZIO.access(_.graphicsContext2D.setFill(coloredPoint.color))
 
@@ -32,12 +31,6 @@ object Canvas {
         //issue: how to share context of this scanvas if points are drawn in parallel ? maybe with a semaphore with 1 permit
         setColor *> drawOval
       }
-    }
-  }
-
-  object CanvasLive {
-    def withScanvas(c: SCanvas): CanvasLive = new CanvasLive {
-      override val scanvas: SCanvas = c
     }
   }
 
