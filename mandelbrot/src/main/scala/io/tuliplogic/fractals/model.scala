@@ -35,12 +35,13 @@ case class ComplexRectangle(
   xMin: Double = -2.0,
   xMax: Double = 1.0,
   yMin: Double = -1.0,
-  yMax: Double = 1.0
+  yMax: Double = 1.0,
+  resolution: Frame
 ) {
 
-  def pixelToComplex(frame: Frame)(x: Int, y: Int): Complex =
+  def pixelToComplex(x: Int, y: Int): Complex =
     Complex(
-      xMin + x * (xMax - xMin) / frame.width,
-      yMin + y * (yMax - yMin) / frame.height
+      xMin + x * (xMax - xMin) / resolution.width,
+      yMin + y * (yMax - yMin) / resolution.height
     )
 }
