@@ -64,9 +64,8 @@ object fractal {
   } yield (coloredPoints, computationNanos)
 
   def calculationAndDrawingProgram(width: Int, height: Int): ZIO[Canvas with SCanvas with Console with Clock with Coloring with FractAlgo, Nothing, Unit] = for {
-//    coloredPoints <- calculationProgram(5000, 8, 600, 400, Some(600))
-    coloredPoints <- calculationProgramParallelPoints(5000, 8, width, height, Some(600))
-//    coloredPoints <- calculationProgramParallelRows(5000, 8, width, height, Some(600))
+//    coloredPoints <- calculationProgramParallelPoints(5000, 8, width, height, Some(600))
+    coloredPoints <- calculationProgramParallelRows(5000, 8, width, height, Some(600))
 //    coloredPoints <- calculationProgramFullySequential(5000, 8, width, height, Some(600))
     startDraw     <- clock.nanoTime
     _             <- ZIO.foreach(coloredPoints._1)(coloredPoint => canvas.drawPoint(coloredPoint))

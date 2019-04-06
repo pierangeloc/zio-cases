@@ -37,3 +37,27 @@ object Main extends JFXApp {
 
   rts.unsafeRun(fractal.calculationAndDrawingProgram(env.getWidth.intValue(), env.getHeight.intValue()).provide(env))
 }
+
+
+object MainJulia extends JFXApp {
+  self =>
+
+  val rts = new DefaultRuntime {}
+  val env = new SCanvas(1024, 768) with CanvasLive with Console.Live with Clock.Live with Coloring.AColoring with FractAlgo.JuliaAlgo { val c = Complex(-0.4, -0.59)}
+
+  stage = new PrimaryStage {
+    title = "Functional Mandelbrot"
+
+    scene = new Scene {
+      fill = Black
+      content = new HBox {
+        padding = Insets(20)
+        children = Seq(
+          env
+        )
+      }
+    }
+  }
+
+  rts.unsafeRun(fractal.calculationAndDrawingProgram(env.getWidth.intValue(), env.getHeight.intValue()).provide(env))
+}

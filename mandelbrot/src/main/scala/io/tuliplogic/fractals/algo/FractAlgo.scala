@@ -31,7 +31,6 @@ object FractAlgo {
           else
             run(z * z + c, iter + 1)
 
-
         val now = System.nanoTime()
         val res = run(Complex.zero, 0)
         ZIO.effectTotal(res)
@@ -41,8 +40,20 @@ object FractAlgo {
   }
 
   trait JuliaAlgo extends FractAlgo {
+    val c: Complex
     def service: Service[Any] = new Service[Any] {
-      def iterations(c: Complex, bailout: Int, maxIterations: Int): ZIO[Any, Nothing, Int] = ???
+      def iterations(zz: Complex, bailout: Int, maxIterations: Int): ZIO[Any, Nothing, Int] = {
+        def run(z: Complex, iter: Int): Int =
+          if (iter >= maxIterations ||  z.squaredAbs > bailout)
+            iter
+          else
+            run(z * z + c, iter + 1)
+
+        val now = System.nanoTime()
+        val res = run(zz, 0)
+        ZIO.effectTotal(res)
+      }
+
     }
   }
 }
