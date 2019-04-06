@@ -15,20 +15,21 @@ object Complex {
   val one = Complex(1, 0)
 }
 
-
 final case class ColoredPoint(x: Int, y: Int, color: Color) {
   override def toString: String = s"($x, $y, [${color.red}, ${color.green}, ${color.blue}])"
 }
 
 final case class ColoredBitmap(coloredPoints: List[ColoredPoint])
 
-
-
 case class Frame(width: Int = 600, height: Int = 400) {
   def allPoints: List[(Int, Int)] = for {
     xx <- (0 until width).toList
     yy <- (0 until height).toList
   } yield (xx, yy)
+
+  def rows: List[List[(Int, Int)]] = for {
+    yy <- (0 until height).toList
+  } yield (0 until width).toList.map((_, yy))
 }
 
 case class ComplexRectangle(

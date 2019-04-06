@@ -1,6 +1,5 @@
 package io.tuliplogic.fractals
 
-import io.tuliplogic.fractals.Main.stage
 import io.tuliplogic.fractals.algo.FractAlgo
 import io.tuliplogic.fractals.canvas.Canvas.CanvasLive
 import io.tuliplogic.fractals.coloring.Coloring
@@ -20,7 +19,7 @@ object Main extends JFXApp {
   self =>
 
   val rts = new DefaultRuntime {}
-  val env = new SCanvas(600, 400) with CanvasLive with Console.Live with Clock.Live with Coloring.AColoring with FractAlgo.MandelbrotAlgo {}
+  val env = new SCanvas(1024, 768) with CanvasLive with Console.Live with Clock.Live with Coloring.AColoring with FractAlgo.MandelbrotAlgo {}
 
   stage = new PrimaryStage {
     title = "Functional Mandelbrot"
@@ -36,5 +35,5 @@ object Main extends JFXApp {
     }
   }
 
-  rts.unsafeRun(fractal.calculationAndDrawingProgram.provide(env))
+  rts.unsafeRun(fractal.calculationAndDrawingProgram(env.getWidth.intValue(), env.getHeight.intValue()).provide(env))
 }

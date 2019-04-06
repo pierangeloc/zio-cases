@@ -7,6 +7,6 @@ import scalaz.zio.ZIO
   * Created with ♥ in Amsterdam
   */
 package object algo extends FractAlgo.Service[FractAlgo] {
-  override def iterate(c: Complex, bailout: Int, maxIterations: Int): ZIO[FractAlgo, Nothing, Int] =
-    ZIO.accessM(_.service.iterate(c, bailout, maxIterations))
+  override def iterations(c: Complex, bailout: Int, maxIterations: Int): ZIO[FractAlgo, Nothing, Int] =
+    ZIO.accessM(_.service.iterations(c, bailout, maxIterations))
 }

@@ -18,7 +18,7 @@ object ParBenchmark extends App {
     pars <- ZIO.succeed(Stream.iterate(8L)(_ * 2).takeWhile(_ <= 2 * 240000L))
     parsResults <- ZIO.foreach(pars) { par =>
       console.putStrLn(s"Benchmarking with par = $par") *>
-        fractal.calculationProgram(Some(par)).map { case (_, time) => (par, time) }
+        fractal.calculationProgramParallelPoints(5000, 8, 600, 400, Some(par)).map { case (_, time) => (par, time) }
     }
   } yield parsResults
 
