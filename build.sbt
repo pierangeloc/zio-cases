@@ -1,5 +1,7 @@
 import Dependencies._
 
+enablePlugins(JmhPlugin)
+
 lazy val tpolecatSettings = Seq(
   scalacOptions ++=
     Seq(

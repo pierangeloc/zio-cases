@@ -3,6 +3,7 @@ package io.tuliplogic.fractals
 import io.tuliplogic.fractals.algo.FractAlgo
 import io.tuliplogic.fractals.canvas.Canvas.CanvasLive
 import io.tuliplogic.fractals.coloring.Coloring
+import io.tuliplogic.fractals.fractal.ComputationStrategy
 import scalafx.application.JFXApp
 import scalafx.application.JFXApp.PrimaryStage
 import scalafx.geometry.Insets
@@ -13,7 +14,6 @@ import scalaz.zio.DefaultRuntime
 import scalaz.zio.clock.Clock
 import scalaz.zio.console.Console
 import scalafx.scene.canvas.{Canvas => SCanvas}
-
 
 object Main extends JFXApp {
   self =>
@@ -35,7 +35,7 @@ object Main extends JFXApp {
     }
   }
 
-  rts.unsafeRun(fractal.calculationAndDrawingProgram(env.getWidth.intValue(), env.getHeight.intValue()).provide(env))
+  rts.unsafeRun(fractal.calculationAndDrawingProgram(env.getWidth.intValue(), env.getHeight.intValue())(ComputationStrategy.ParallelRows).provide(env))
 }
 
 
@@ -59,5 +59,5 @@ object MainJulia extends JFXApp {
     }
   }
 
-  rts.unsafeRun(fractal.calculationAndDrawingProgram(env.getWidth.intValue(), env.getHeight.intValue()).provide(env))
+  rts.unsafeRun(fractal.calculationAndDrawingProgram(env.getWidth.intValue(), env.getHeight.intValue())(ComputationStrategy.ParallelRows).provide(env))
 }

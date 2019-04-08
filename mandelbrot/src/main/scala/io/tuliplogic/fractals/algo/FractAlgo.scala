@@ -31,7 +31,6 @@ object FractAlgo {
           else
             run(z * z + c, iter + 1)
 
-        val now = System.nanoTime()
         val res = run(Complex.zero, 0)
         ZIO.effectTotal(res)
       }
@@ -49,7 +48,6 @@ object FractAlgo {
           else
             run(z * z + c, iter + 1)
 
-        val now = System.nanoTime()
         val res = run(zz, 0)
         ZIO.effectTotal(res)
       }
