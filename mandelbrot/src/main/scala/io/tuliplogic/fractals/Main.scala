@@ -19,7 +19,7 @@ object Main extends JFXApp {
   self =>
 
   val rts = new DefaultRuntime {}
-  val env = new SCanvas(1024, 768) with CanvasLive with Console.Live with Clock.Live with Coloring.AColoring with FractAlgo.MandelbrotAlgo {}
+  val env = new SCanvas(600, 400) with CanvasLive with Console.Live with Clock.Live with Coloring.AColoring with FractAlgo.MandelbrotAlgo {}
 
   stage = new PrimaryStage {
     title = "Functional Mandelbrot"
@@ -43,7 +43,7 @@ object MainJulia extends JFXApp {
   self =>
 
   val rts = new DefaultRuntime {}
-  val env = new SCanvas(1024, 768) with CanvasLive with Console.Live with Clock.Live with Coloring.AColoring with FractAlgo.JuliaAlgo { val c = Complex(-0.4, -0.59)}
+  val env = new SCanvas(600, 400) with CanvasLive with Console.Live with Clock.Live with Coloring.AColoring with FractAlgo.JuliaAlgo { val c = Complex(-0.4, -0.59)}
 
   stage = new PrimaryStage {
     title = "Functional Mandelbrot"

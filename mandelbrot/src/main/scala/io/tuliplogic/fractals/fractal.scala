@@ -60,7 +60,7 @@ object fractal {
 
   def calculationProgram(maxIterations: Int, maxSquaredModule: Int, frameWidth: Int, frameHeight: Int)(strategy: ComputationStrategy): ZIO[Console with Clock with Coloring with FractAlgo, Nothing, (List[ColoredPoint], Long)] = for {
     startCalc        <- clock.nanoTime
-    _                <- console.putStrLn("Computing with parallel points method")
+    _                <- console.putStrLn(s"Computing with strategy: $strategy")
     resolution       <- ZIO.succeed(Frame(frameWidth, frameHeight))
     complexRectangle <- ZIO.succeed(ComplexRectangle(-2, 1, -1, 1, resolution))
     coloredPoints    <- coloredPoints(complexRectangle, resolution, maxIterations, maxSquaredModule)(strategy)
