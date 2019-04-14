@@ -17,27 +17,41 @@ trait FractAlgo {
 object FractAlgo {
 
   trait Service[R] {
-    def iterate(c: Complex, bailout: Int, maxIterations: Int): ZIO[R, Nothing, Int]
+    def iterations(c: Complex, bailout: Int, maxIterations: Int): ZIO[R, Nothing, Int]
   }
 
   trait MandelbrotAlgo extends FractAlgo {
     def service: Service[Any] = new Service[Any] {
-      def iterate(c: Complex, bailout: Int, maxIterations: Int): ZIO[Any, Nothing, Int] = {
+      def iterations(c: Complex, bailout: Int, maxIterations: Int): ZIO[Any, Nothing, Int] = {
 
         @tailrec
         def run(z: Complex, iter: Int): Int =
           if (iter >= maxIterations ||  z.squaredAbs > bailout)
             iter
           else
-            run(Complex(1, 0) * z * z + c, iter + 1)
+            run(z * z + c, iter + 1)
 
-        ZIO.effectTotal(run(Complex.zero, 0))
+        val res = run(Complex.zero, 0)
+        ZIO.effectTotal(res)
       }
     }
 
   }
 
-  trait JuliaAlgo extends Service[Any] {
-    def iterate(c: Complex, bailout: Int, maxIterations: Int): ZIO[Any, Nothing, Int] = ???
+  trait JuliaAlgo extends FractAlgo {
+    val c: Complex
+    def service: Service[Any] = new Service[Any] {
+      def iterations(zz: Complex, bailout: Int, maxIterations: Int): ZIO[Any, Nothing, Int] = {
+        def run(z: Complex, iter: Int): Int =
+          if (iter >= maxIterations ||  z.squaredAbs > bailout)
+            iter
+          else
+            run(z * z + c, iter + 1)
+
+        val res = run(zz, 0)
+        ZIO.effectTotal(res)
+      }
+
+    }
   }
 }

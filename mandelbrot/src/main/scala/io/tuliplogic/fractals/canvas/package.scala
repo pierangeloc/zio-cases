@@ -2,7 +2,6 @@ package io.tuliplogic.fractals
 
 import scalaz.zio.ZIO
 import scalafx.scene.canvas.{Canvas => SCanvas}
-import scalaz.zio.console.Console
 
 /**
   *
