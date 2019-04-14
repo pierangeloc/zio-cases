@@ -43,7 +43,7 @@ object MainJulia extends JFXApp {
   self =>
 
   val rts = new DefaultRuntime {}
-  val env = new SCanvas(600, 400) with CanvasLive with Console.Live with Clock.Live with Coloring.AColoring with FractAlgo.JuliaAlgo { val c = Complex(-0.4, -0.59)}
+  val env = new SCanvas(600, 400) with CanvasLive with Console.Live with Clock.Live with Coloring.AColoring with FractAlgo.JuliaAlgo { val c = Complex(0.34, -0.05)}
 
   stage = new PrimaryStage {
     title = "Functional Mandelbrot"

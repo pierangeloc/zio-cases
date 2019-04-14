@@ -21,7 +21,7 @@ object fractal {
     case class  ParallelPoints(parallelism: Int) extends ComputationStrategy
     case object ParallelPointsAllPar             extends ComputationStrategy
     case object ParallelRows                     extends ComputationStrategy
-    case class  ParallelSliced(sliceSize: Int)    extends ComputationStrategy
+    case class  ParallelSliced(sliceSize: Int)   extends ComputationStrategy
   }
 
   def computeColor(x: Int, y: Int, complexRectangle: ComplexRectangle, maxIterations: Int, bailout: Int): ZIO[Coloring with FractAlgo, Nothing, ColoredPoint] = for {
@@ -58,7 +58,7 @@ object fractal {
         }.map(_.flatten)
     }
 
-  def calculationProgram(maxIterations: Int, maxSquaredModule: Int, frameWidth: Int, frameHeight: Int)(strategy: ComputationStrategy): ZIO[Console with Clock with Coloring with FractAlgo, Nothing, (List[ColoredPoint], Long)] = for {
+  def calculationProgram(strategy: ComputationStrategy)(maxIterations: Int, maxSquaredModule: Int, frameWidth: Int, frameHeight: Int): ZIO[Console with Clock with Coloring with FractAlgo, Nothing, (List[ColoredPoint], Long)] = for {
     startCalc        <- clock.nanoTime
     _                <- console.putStrLn(s"Computing with strategy: $strategy")
     resolution       <- ZIO.succeed(Frame(frameWidth, frameHeight))
@@ -70,7 +70,7 @@ object fractal {
   } yield (coloredPoints, computationNanos)
 
   def calculationAndDrawingProgram(width: Int, height: Int)(strategy: ComputationStrategy): ZIO[Console with Clock with Canvas with SCanvas with Coloring with FractAlgo, Nothing, Unit] = for {
-    coloredPoints <- calculationProgram(5000, 8, width, height)(strategy)
+    coloredPoints <- calculationProgram(strategy)(5000, 8, width, height)
     startDraw     <- clock.nanoTime
     _             <- ZIO.foreach(coloredPoints._1)(coloredPoint => canvas.drawPoint(coloredPoint))
     endDraw       <- clock.nanoTime

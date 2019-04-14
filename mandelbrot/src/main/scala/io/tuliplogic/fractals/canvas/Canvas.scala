@@ -9,14 +9,13 @@ import scalaz.zio.ZIO
   * zio-cases - 2019-04-02
   * Created with ♥ in Amsterdam
   */
-//canvas component
 sealed trait Canvas {
   val canvas: Canvas.Service[SCanvas]
 }
 
 object Canvas {
 
-  trait Service[-R] {
+  trait Service[R] {
     def drawPoint(p: ColoredPoint): ZIO[R, Nothing, Unit]
   }
 
