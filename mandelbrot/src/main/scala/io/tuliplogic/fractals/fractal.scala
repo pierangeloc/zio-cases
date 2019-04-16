@@ -5,7 +5,7 @@ import io.tuliplogic.fractals.canvas.Canvas
 import io.tuliplogic.fractals.coloring.Coloring
 import io.tuliplogic.fractals.fractal.ComputationStrategy.{ParallelPoints, ParallelPointsAllPar, ParallelRows, ParallelSliced}
 import scalaz.zio.console.Console
-import scalaz.zio.{ZIO, clock, console}
+import scalaz.zio.{Semaphore, ZIO, clock, console}
 import scalaz.zio.clock.Clock
 import scalafx.scene.canvas.{Canvas => SCanvas}
 
@@ -24,57 +24,60 @@ object fractal {
     case class  ParallelSliced(sliceSize: Int)   extends ComputationStrategy
   }
 
-  def computeColor(x: Int, y: Int, complexRectangle: ComplexRectangle, maxIterations: Int, bailout: Int): ZIO[Coloring with FractAlgo, Nothing, ColoredPoint] = for {
-    iter <- algo.iterations(complexRectangle.pixelToComplex(x, y), bailout, maxIterations)
+  def computeColor(complexRectangle: ComplexRectangle, maxIterations: Int, bailout: Int)(p: Pixel): ZIO[Coloring with FractAlgo, Nothing, ColoredPoint] = for {
+    iter <- algo.iterations(complexRectangle.pixelToComplex(p), bailout, maxIterations)
     color <- coloring.getColor(iter, maxIterations)
-  } yield ColoredPoint(x, y, color)
+  } yield ColoredPoint(p, color)
 
-  def coloredPoints(
-    complexRectangle: ComplexRectangle,
+  //f = computeColor(complexRectangle, maxIterations, maxSquaredModule).tupled
+
+  def onAllPoints[R, A](
     resolution: Frame,
-    maxIterations: Int,
-    maxSquaredModule: Int
-  )(strategy: ComputationStrategy): ZIO[Coloring with FractAlgo, Nothing, List[ColoredPoint]] =
+  )(strategy: ComputationStrategy)(f: Pixel => ZIO[Coloring with FractAlgo with R, Nothing, A]): ZIO[Coloring with FractAlgo with R, Nothing, List[A]] =
     strategy match {
       case ParallelPoints(n) =>
-        ZIO.foreachParN(n)(resolution.allPoints) {
-          case (x, y) => computeColor(x, y, complexRectangle, maxIterations, maxSquaredModule)
-        }
+        ZIO.foreachParN(n)(resolution.allPoints)(f)
       case ParallelPointsAllPar =>
-        ZIO.foreachPar(resolution.allPoints) {
-          case (x, y) => computeColor(x, y, complexRectangle, maxIterations, maxSquaredModule)
-        }
-      case ParallelRows =>
+        ZIO.foreachPar(resolution.allPoints) (f)      case ParallelRows =>
         ZIO.foreachPar(resolution.rows) { row =>
-          ZIO.foreach(row) {
-            case (x, y) => computeColor(x, y, complexRectangle, maxIterations, maxSquaredModule)
-          }
+          ZIO.foreach(row) (f)
         }.map(_.flatten)
       case ParallelSliced(n) =>
         ZIO.foreachPar(resolution.allPoints.sliding(n, n).toList) { row =>
-          ZIO.foreach(row) {
-            case (x, y) => computeColor(x, y, complexRectangle, maxIterations, maxSquaredModule)
-          }
+          ZIO.foreach(row) (f)
         }.map(_.flatten)
     }
 
-  def calculationProgram(strategy: ComputationStrategy)(maxIterations: Int, maxSquaredModule: Int, frameWidth: Int, frameHeight: Int): ZIO[Console with Clock with Coloring with FractAlgo, Nothing, (List[ColoredPoint], Long)] = for {
+  def calculate(strategy: ComputationStrategy)(maxIterations: Int, maxSquaredModule: Int, frameWidth: Int, frameHeight: Int): ZIO[Console with Clock with Coloring with FractAlgo, Nothing, (List[ColoredPoint], Long)] = for {
     startCalc        <- clock.nanoTime
     _                <- console.putStrLn(s"Computing with strategy: $strategy")
     resolution       <- ZIO.succeed(Frame(frameWidth, frameHeight))
     complexRectangle <- ZIO.succeed(ComplexRectangle(-2, 1, -1, 1, resolution))
-    coloredPoints    <- coloredPoints(complexRectangle, resolution, maxIterations, maxSquaredModule)(strategy)
+    coloredPoints    <- onAllPoints(resolution)(strategy)(computeColor(complexRectangle, maxIterations, maxSquaredModule))
     computationNanos <- clock.nanoTime.map(_ - startCalc)
-
-    _                <- console.putStrLn(s"calculated all ${coloredPoints.size} points; Computation of colors took ${computationNanos / 1000000} ms")
+    _                <- console.putStrLn(s"calculated colors of all ${coloredPoints.size} points; Took ${computationNanos / 1000000} ms")
   } yield (coloredPoints, computationNanos)
 
-  def calculationAndDrawingProgram(width: Int, height: Int)(strategy: ComputationStrategy): ZIO[Console with Clock with Canvas with SCanvas with Coloring with FractAlgo, Nothing, Unit] = for {
-    coloredPoints <- calculationProgram(strategy)(5000, 8, width, height)
+  def calculateAllAndDrawAll(strategy: ComputationStrategy)(frameWidth: Int, frameHeight: Int): ZIO[Console with Clock with Canvas with SCanvas with Coloring with FractAlgo, Nothing, Unit] = for {
+    coloredPoints <- calculate(strategy)(5000, 8, frameWidth, frameHeight)
     startDraw     <- clock.nanoTime
     _             <- ZIO.foreach(coloredPoints._1)(coloredPoint => canvas.drawPoint(coloredPoint))
     endDraw       <- clock.nanoTime
     _             <- console.putStrLn(s"Drawing canvas took ${(endDraw - startDraw) / 1000000} ms ")
   } yield ()
+
+  def calculateAndDraw(strategy: ComputationStrategy)(maxIterations: Int, maxSquaredModule: Int, frameWidth: Int, frameHeight: Int): ZIO[Console with Clock with Coloring with Canvas with SCanvas with FractAlgo, Nothing, Unit] = for {
+    startCalc        <- clock.nanoTime
+    _                <- console.putStrLn(s"Computing with strategy: $strategy")
+    resolution       <- ZIO.succeed(Frame(frameWidth, frameHeight))
+    complexRectangle <- ZIO.succeed(ComplexRectangle(-2, 1, -1, 1, resolution))
+    semaphore        <- Semaphore.make(1)
+    _                <- onAllPoints(resolution)(strategy){ p =>
+                          computeColor(complexRectangle, maxIterations, maxSquaredModule)(p).flatMap(coloredPoint => semaphore.withPermit(canvas.drawPoint(coloredPoint)))
+                        }
+    computationNanos <- clock.nanoTime.map(_ - startCalc)
+    _                <- console.putStrLn(s"calculated and drawn all ${resolution.height * resolution.width} points; Took ${computationNanos / 1000000} ms")
+  } yield ()
+
 
 }

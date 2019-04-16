@@ -15,21 +15,23 @@ object Complex {
   val one = Complex(1, 0)
 }
 
-final case class ColoredPoint(x: Int, y: Int, color: Color) {
-  override def toString: String = s"($x, $y, [${color.red}, ${color.green}, ${color.blue}])"
+case class Pixel(x: Int, y: Int)
+
+final case class ColoredPoint(pixel: Pixel, color: Color) {
+  override def toString: String = s"(${pixel.x}, ${pixel.y}, [${color.red}, ${color.green}, ${color.blue}])"
 }
 
 final case class ColoredBitmap(coloredPoints: List[ColoredPoint])
 
 case class Frame(width: Int = 600, height: Int = 400) {
-  def allPoints: List[(Int, Int)] = for {
+  def allPoints: List[Pixel] = for {
     xx <- (0 until width).toList
     yy <- (0 until height).toList
-  } yield (xx, yy)
+  } yield Pixel(xx, yy)
 
-  def rows: List[List[(Int, Int)]] = for {
+  def rows: List[List[Pixel]] = for {
     yy <- (0 until height).toList
-  } yield (0 until width).toList.map((_, yy))
+  } yield (0 until width).toList.map(Pixel(_, yy))
 }
 
 case class ComplexRectangle(
@@ -40,9 +42,9 @@ case class ComplexRectangle(
   resolution: Frame
 ) {
 
-  def pixelToComplex(x: Int, y: Int): Complex =
+  def pixelToComplex(p: Pixel): Complex =
     Complex(
-      xMin + x * (xMax - xMin) / resolution.width,
-      yMin + y * (yMax - yMin) / resolution.height
+      xMin + p.x * (xMax - xMin) / resolution.width,
+      yMin + p.y * (yMax - yMin) / resolution.height
     )
 }

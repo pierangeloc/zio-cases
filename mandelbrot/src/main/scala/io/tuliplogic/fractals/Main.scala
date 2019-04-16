@@ -10,10 +10,12 @@ import scalafx.geometry.Insets
 import scalafx.scene.Scene
 import scalafx.scene.layout.HBox
 import scalafx.scene.paint.Color.Black
-import scalaz.zio.DefaultRuntime
+import scalaz.zio.{DefaultRuntime, ZIO}
 import scalaz.zio.clock.Clock
 import scalaz.zio.console.Console
 import scalafx.scene.canvas.{Canvas => SCanvas}
+import scalaz.zio.duration.Duration
+import scala.concurrent.duration._
 
 object Main extends JFXApp {
   self =>
@@ -35,7 +37,9 @@ object Main extends JFXApp {
     }
   }
 
-  rts.unsafeRun(fractal.calculationAndDrawingProgram(env.getWidth.intValue(), env.getHeight.intValue())(ComputationStrategy.ParallelRows).provide(env))
+//  rts.unsafeRun(fractal.calculationAndDrawingProgram(ComputationStrategy.ParallelRows)(env.getWidth.intValue(), env.getHeight.intValue()).provide(env))
+//  rts.unsafeRun(fractal.calculateAndDraw(ComputationStrategy.ParallelRows)(5000, 8, env.getWidth.intValue(), env.getHeight.intValue()).provide(env))
+  rts.unsafeRun(ZIO.sleep(Duration.fromScala(5.seconds)) *> scalaz.zio.console.putStrLn("Hello").fork)
 }
 
 
@@ -46,7 +50,7 @@ object MainJulia extends JFXApp {
   val env = new SCanvas(600, 400) with CanvasLive with Console.Live with Clock.Live with Coloring.AColoring with FractAlgo.JuliaAlgo { val c = Complex(0.34, -0.05)}
 
   stage = new PrimaryStage {
-    title = "Functional Mandelbrot"
+    title = "Functional Julia"
 
     scene = new Scene {
       fill = Black
@@ -59,5 +63,5 @@ object MainJulia extends JFXApp {
     }
   }
 
-  rts.unsafeRun(fractal.calculationAndDrawingProgram(env.getWidth.intValue(), env.getHeight.intValue())(ComputationStrategy.ParallelRows).provide(env))
+  rts.unsafeRun(fractal.calculateAllAndDrawAll(ComputationStrategy.ParallelRows)(env.getWidth.intValue(), env.getHeight.intValue()).provide(env))
 }

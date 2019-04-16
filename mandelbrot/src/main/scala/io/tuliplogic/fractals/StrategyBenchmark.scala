@@ -22,25 +22,25 @@ object StrategyBenchmark extends App {
   def benchmarkParallelPoints: ZIO[Console with Clock with Coloring with FractAlgo, Nothing, List[(Int, Long)]] =
     ZIO.foreach(Stream.iterate(8)(_ * 2).takeWhile(_ <= 2 * frameHeight * frameWidth)) { par =>
       console.putStrLn(s"Benchmarking with strategy par = ${ComputationStrategy.ParallelPoints(par)}") *>
-        fractal.calculationProgram(ComputationStrategy.ParallelPoints(par))(maxIter, maxSquaredModule, frameWidth, frameHeight)
+        fractal.calculate(ComputationStrategy.ParallelPoints(par))(maxIter, maxSquaredModule, frameWidth, frameHeight)
           .map { case (_, time) => (par, time) }
     }
 
   def benchmarkParallelSliced: ZIO[Console with Clock with Coloring with FractAlgo, Nothing, List[(Int, Long)]] =
     ZIO.foreach(Stream.iterate(8)(_ * 2).takeWhile(_ <= 2 * frameHeight * frameWidth)) { par =>
       console.putStrLn(s"Benchmarking with strategy par = ${ComputationStrategy.ParallelPoints(par)}") *>
-        fractal.calculationProgram(ComputationStrategy.ParallelSliced(par))(maxIter, maxSquaredModule, frameWidth, frameHeight)
+        fractal.calculate(ComputationStrategy.ParallelSliced(par))(maxIter, maxSquaredModule, frameWidth, frameHeight)
           .map { case (_, time) => (par, time) }
     }
 
   def benchmarkParallelRows: ZIO[Console with Clock with Coloring with FractAlgo, Nothing, Long]=
       console.putStrLn(s"Benchmarking with strategy par = ${ComputationStrategy.ParallelRows}") *>
-        fractal.calculationProgram(ComputationStrategy.ParallelRows)(maxIter, maxSquaredModule, frameWidth, frameHeight)
+        fractal.calculate(ComputationStrategy.ParallelRows)(maxIter, maxSquaredModule, frameWidth, frameHeight)
           .map { case (_, time) => time }
 
   def benchmarkParallelPointsAllPar: ZIO[Console with Clock with Coloring with FractAlgo, Nothing, Long]=
     console.putStrLn(s"Benchmarking with strategy par = ${ComputationStrategy.ParallelPointsAllPar}") *>
-      fractal.calculationProgram(ComputationStrategy.ParallelPointsAllPar)(maxIter, maxSquaredModule, frameWidth, frameHeight)
+      fractal.calculate(ComputationStrategy.ParallelPointsAllPar)(maxIter, maxSquaredModule, frameWidth, frameHeight)
         .map { case (_, time) => time }
 
 

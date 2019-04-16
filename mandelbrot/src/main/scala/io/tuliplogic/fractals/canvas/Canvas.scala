@@ -25,7 +25,7 @@ object Canvas {
       override def drawPoint(coloredPoint: ColoredPoint): ZIO[SCanvas, Nothing, Unit] = {
         def setColor: ZIO[SCanvas, Nothing, Unit] = ZIO.access(_.graphicsContext2D.setFill(coloredPoint.color))
 
-        def drawOval: ZIO[SCanvas, Nothing, Unit] = ZIO.access(_.graphicsContext2D.fillOval(coloredPoint.x.toDouble, coloredPoint.y.toDouble, 1.0, 1.0))
+        def drawOval: ZIO[SCanvas, Nothing, Unit] = ZIO.access(_.graphicsContext2D.fillOval(coloredPoint.pixel.x.toDouble, coloredPoint.pixel.y.toDouble, 1.0, 1.0))
 
         //issue: how to share context of this scanvas if points are drawn in parallel ? maybe with a semaphore with 1 permit
         setColor *> drawOval
