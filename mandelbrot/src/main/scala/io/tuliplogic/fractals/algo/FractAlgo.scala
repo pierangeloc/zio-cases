@@ -41,14 +41,14 @@ object FractAlgo {
   trait JuliaAlgo extends FractAlgo {
     val c: Complex
     def service: Service[Any] = new Service[Any] {
-      def iterations(zz: Complex, bailout: Int, maxIterations: Int): ZIO[Any, Nothing, Int] = {
-        def run(z: Complex, iter: Int): Int =
-          if (iter >= maxIterations ||  z.squaredAbs > bailout)
+      def iterations(z: Complex, bailout: Int, maxIterations: Int): ZIO[Any, Nothing, Int] = {
+        def run(zz: Complex, iter: Int): Int =
+          if (iter >= maxIterations ||  zz.squaredAbs > bailout)
             iter
           else
-            run(z * z + c, iter + 1)
+            run(zz * zz + c, iter + 1)
 
-        val res = run(zz, 0)
+        val res = run(z, 0)
         ZIO.effectTotal(res)
       }
 

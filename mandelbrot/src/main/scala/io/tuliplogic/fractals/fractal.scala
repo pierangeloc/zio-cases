@@ -7,13 +7,8 @@ import io.tuliplogic.fractals.fractal.ComputationStrategy.{ParallelPoints, Paral
 import scalaz.zio.console.Console
 import scalaz.zio.{Semaphore, ZIO, clock, console}
 import scalaz.zio.clock.Clock
-import scalafx.scene.canvas.Canvas
+import scalaz.zio.duration._
 
-/**
-  *
-  * mandelbrot - 2019-03-29
-  * Created with ♥ in Amsterdam
-  */
 object fractal {
 
   sealed trait ComputationStrategy
@@ -25,7 +20,7 @@ object fractal {
   }
 
   def computeColor(complexRectangle: ComplexRectangle, maxIterations: Int, bailout: Int)(p: Pixel): ZIO[Coloring with FractAlgo, Nothing, ColoredPoint] = for {
-    iter <- algo.iterations(complexRectangle.pixelToComplex(p), bailout, maxIterations)
+    iter  <- algo.iterations(complexRectangle.pixelToComplex(p), bailout, maxIterations)
     color <- coloring.getColor(iter, maxIterations)
   } yield ColoredPoint(p, color)
 
@@ -38,7 +33,8 @@ object fractal {
       case ParallelPoints(n) =>
         ZIO.foreachParN(n)(resolution.allPoints)(f)
       case ParallelPointsAllPar =>
-        ZIO.foreachPar(resolution.allPoints) (f)      case ParallelRows =>
+        ZIO.foreachPar(resolution.allPoints)(f)
+      case ParallelRows =>
         ZIO.foreachPar(resolution.rows) { row =>
           ZIO.foreach(row) (f)
         }.map(_.flatten)
@@ -60,9 +56,9 @@ object fractal {
   } yield (coloredPoints, computationNanos)
 
   def calculateAllAndDrawAll[DrawOn](strategy: ComputationStrategy)
-    (frameWidth: Int, frameHeight: Int)
+    (maxIterations: Int, maxSquaredModule: Int, frameWidth: Int, frameHeight: Int)
     (drawOn: DrawOn): ZIO[Console with Clock with ZCanvas[DrawOn] with Coloring with FractAlgo, Nothing, Unit] = for {
-    coloredPoints <- calculate(strategy)(5000, 8, frameWidth, frameHeight)
+    coloredPoints <- calculate(strategy)(maxIterations, maxSquaredModule, frameWidth, frameHeight)
     startDraw     <- clock.nanoTime
     _             <- ZIO.foreach(coloredPoints._1)(coloredPoint => canvas.canvasService[DrawOn].drawPoint(coloredPoint)(drawOn))
     endDraw       <- clock.nanoTime
@@ -79,7 +75,13 @@ object fractal {
     semaphore        <- Semaphore.make(1)
     _                <- onAllPoints(resolution)(strategy) { p =>
     //TODO: the withPermit should be performed in the drawPoint, it's not a concern of this method
-                          computeColor(complexRectangle, maxIterations, maxSquaredModule)(p).flatMap(coloredPoint => semaphore.withPermit(canvas.canvasService[DrawOn].drawPoint(coloredPoint)(drawOn)))
+
+                          computeColor(complexRectangle, maxIterations, maxSquaredModule)(p)
+                            .flatMap(coloredPoint =>
+                              semaphore.withPermit(ZIO.sleep(100.microsecond) *> canvas.canvasService[DrawOn].drawPoint(coloredPoint)(drawOn)
+                              )
+                            )
+//                          computeColor(complexRectangle, maxIterations, maxSquaredModule)(p).flatMap(coloredPoint => canvas.canvasService[DrawOn].drawPoint(coloredPoint)(drawOn))
                         }
     computationNanos <- clock.nanoTime.map(_ - startCalc)
     _                <- console.putStrLn(s"calculated and drawn all ${resolution.height * resolution.width} points; Took ${computationNanos / 1000000} ms")

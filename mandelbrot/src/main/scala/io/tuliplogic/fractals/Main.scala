@@ -1,12 +1,13 @@
 package io.tuliplogic.fractals
 
+import io.tuliplogic.fractals.UIComponents.FrameSizeSelectUI.box
 import io.tuliplogic.fractals.UIComponents.{FractalTypeUI, FrameSizeSelectUI, FramesUI}
 import io.tuliplogic.fractals.UIModel.FractalType
 import io.tuliplogic.fractals.algo.FractAlgo
 import io.tuliplogic.fractals.canvas.ZCanvas.ZCanvasFxLive
 import io.tuliplogic.fractals.coloring.Coloring
 import io.tuliplogic.fractals.fractal.ComputationStrategy
-import scalafx.application.JFXApp
+import scalafx.application.{JFXApp, Platform}
 import scalafx.application.JFXApp.PrimaryStage
 import scalafx.event.ActionEvent
 import scalafx.geometry.Insets
@@ -19,6 +20,7 @@ import scalaz.zio.clock.Clock
 import scalaz.zio.console.Console
 import scalafx.scene.canvas.Canvas
 import scalafx.scene.control.{Button, Label, RadioButton, TextField, ToggleGroup}
+import scalafx.scene.paint.Color
 
 
 object UIModel {
@@ -46,13 +48,16 @@ object UIComponents {
   object FractalTypeUI {
     val fractalTypeGrp = new ToggleGroup()
     val mandelbrotTb    = new RadioButton("Mandelbrot")
+    mandelbrotTb.selected = true
     val juliaTb         = new RadioButton("Julia")
     fractalTypeGrp.toggles = List(mandelbrotTb, juliaTb)
 
     val cR = new TextField()
+    cR.text = "0.34"
     cR.prefWidth = 120
     val cRLabel = new Label("Re(c)")
     val cI = new TextField()
+    cI.text = "-0.05"
     cI.prefWidth = 120
 
     val cILabel = new Label("Im(c)")
@@ -62,7 +67,9 @@ object UIComponents {
     def selectedFractalType: FractalType = if (juliaTb.isSelected) FractalType.Julia(Complex(cR.text.value.toDouble, cI.text.value.toDouble))
       else FractalType.Mandelbrot
 
-    val box = new VBox(new Label("Fractal Type"), FractalTypeUI.mandelbrotTb, FractalTypeUI.juliaTb, cBox)
+    val lbl =new Label("Fractal Type")
+    lbl.setTextFill(Color.web("#0076a3"))
+    val box = new VBox(lbl, FractalTypeUI.mandelbrotTb, FractalTypeUI.juliaTb, cBox)
   }
 
   object FrameSizeSelectUI {
@@ -72,16 +79,11 @@ object UIComponents {
     val f2 = new RadioButton("1280 x 720")
     val f3 = new RadioButton("1920 x 1080")
 
+    f1.selected = true
     val all = List(f1, f2, f3)
     canvasSizeGrp.toggles = List(f1, f2, f3)
 
     val box = new VBox(new Label("Canvas Size"), f1, f2, f3)
-    box.style = """
-
-      -fx-border-color: white;
-      -fx-border-width: 1;
-      -fx-padding: 6;
-      -fx-margin: 6;"""
 
     def selectedFrameSizeIndex: Int = if (f1.isSelected) 0
       else if (f2.isSelected) 1
@@ -92,19 +94,10 @@ object UIComponents {
 
   object FramesUI {
 
-    val borderStyle =  """
-      -fx-border-color: white;
-      -fx-border-width: 1;
-      -fx-padding: 6;
-      -fx-margin: 6;"""
-
     val f1 = new Canvas(640, 480)
     val f2 = new Canvas(1280, 720)
     val f3 = new Canvas(1920, 1080)
     val all = List(f1, f2, f3)
-    all.foreach {
-      _.style = borderStyle
-    }
 
     val box = new HBox{ children = all }
 
@@ -154,32 +147,35 @@ object FractalUI extends JFXApp {
 
     val environment = env(width, height, selectedFractalType)
 
-//    rts.unsafeRunAsync(fractal.calculateAllAndDrawAll(ComputationStrategy.ParallelRows)(width, height)(selectedFrame).provide(environment))(_ => ())
-    rts.unsafeRun(fractal.calculateAllAndDrawAll(ComputationStrategy.ParallelRows)(width, height)(selectedFrame).provide(environment))
-  }
 
-  val testFormButton = new Button("Test")
-  testFormButton.onAction = (e: ActionEvent) => {
-    println("selected fractal type:" + FractalTypeUI.selectedFractalType + "frameSize: " + FrameSizeSelectUI.selectedFrameSizeIndex)
-  }
+      rts.unsafeRunAsync(
+        fractal.calculateAndDraw(ComputationStrategy.ParallelRows)
+        (5000, 8, width, height)(selectedFrame).provide(environment)
+      )(_ => ())
 
+//      rts.unsafeRunAsync(fractal.calculateAllAndDrawAll(ComputationStrategy.ParallelRows)(width, height)(selectedFrame).provide(environment))(_ => ())
+//      rts.unsafeRunAsync(fractal.calculateAndDraw(ComputationStrategy.ParallelRows)(5000, 8, width, height)(selectedFrame).provide(environment))(_ => ())
+//    rts.unsafeRun(fractal.calculateAllAndDrawAll(ComputationStrategy.ParallelRows)(width, height)(selectedFrame).provide(environment))
+  }
 
   val box = new HBox {
+    id = "main"
     padding = Insets(20)
     children = Seq(
-      new VBox(FractalTypeUI.box, FrameSizeSelectUI.box, computeButton, testFormButton), FramesUI.box
+      new VBox(FractalTypeUI.box, FrameSizeSelectUI.box, computeButton), FramesUI.box
     )
   }
 
-  stage = new PrimaryStage {
-    title = "Functional Julia"
-    //    val label = new Label("Compute")
 
+  stage = new PrimaryStage {
+    title = "Functional Fractals"
     scene = new Scene {
       fill = Black
       content = box
+      stylesheets += getClass.getResource("stylesheets.css").toExternalForm
     }
   }
+
 
 }
 
