@@ -30,7 +30,7 @@ object events {
 }
 
 object errors {
-  sealed trait Error extends Exception
+  sealed trait Error extends Throwable
   object Error {
     case class UserNotFound(userId: UserId) extends Error
     case class UserAlreadyExists(userId: UserId) extends Error
