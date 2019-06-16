@@ -150,6 +150,7 @@ object FractalUI extends JFXApp {
 
       rts.unsafeRunAsync(
         fractal.calculateAndDraw(ComputationStrategy.ParallelRows)
+//        fractal.calculateAllAndThenDrawAll(ComputationStrategy.ParallelRows)
         (5000, 8, width, height)(selectedFrame).provide(environment)
       )(_ => ())
 

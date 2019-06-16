@@ -79,6 +79,24 @@ lazy val mandelbrot = project
       )
   )
 
+lazy val `simple-http4s` = project
+  .in(file("simple-http4s"))
+  .settings(commonSettings)
+  .settings(
+      name := "simple-http4s",
+      libraryDependencies ++= Seq(
+        zio,
+        zioCats,
+        http4sServer,
+        http4sDsl,
+        http4sCirce,
+        circeCore,
+        circeGeneric,
+        circeGenericX,
+        log4CatsSlf4j
+      )
+  )
+
 //lazy val root = project
 //  .in(file("."))
 //  .settings(commonSettings)
