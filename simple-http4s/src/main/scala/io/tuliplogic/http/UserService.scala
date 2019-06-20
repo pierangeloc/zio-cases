@@ -5,8 +5,8 @@ import io.tuliplogic.repository.{UserRepository, userRepo}
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
 import io.circe.generic.auto._
-import scalaz.zio._
-import scalaz.zio.interop.catz._
+import zio._
+import zio.interop.catz._
 
 /**
  * 

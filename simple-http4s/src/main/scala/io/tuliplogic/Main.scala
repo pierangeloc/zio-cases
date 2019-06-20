@@ -3,12 +3,12 @@ package io.tuliplogic
 import io.tuliplogic.http.HttpServer
 import io.tuliplogic.repository.UserRepository
 import io.tuliplogic.repository.UserRepository.MemUserRepository
-import scalaz.zio.{Ref, TaskR, ZIO}
-import scalaz.zio.clock.Clock
+import zio.{Ref, TaskR, ZIO}
+import zio.clock.Clock
 import io.tuliplogic.http.UserService
 import io.tuliplogic.model.user.{User, UserId}
-import scalaz.zio.App
-import scalaz.zio.console._
+import zio.App
+import zio.console._
 
 /**
  * 

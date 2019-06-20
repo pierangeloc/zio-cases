@@ -1,7 +1,7 @@
 package io.tuliplogic.fractals.algo
 
 import io.tuliplogic.fractals.Complex
-import scalaz.zio.ZIO
+import zio.ZIO
 
 import scala.annotation.tailrec
 

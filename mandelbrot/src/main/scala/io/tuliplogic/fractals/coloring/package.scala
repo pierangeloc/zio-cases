@@ -1,6 +1,6 @@
 package io.tuliplogic.fractals
 import scalafx.scene.paint.Color
-import scalaz.zio.{UIO, ZIO}
+import zio.{UIO, ZIO}
 
 /**
   *

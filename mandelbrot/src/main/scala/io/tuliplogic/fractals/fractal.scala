@@ -4,10 +4,10 @@ import io.tuliplogic.fractals.algo.FractAlgo
 import io.tuliplogic.fractals.canvas.ZCanvas
 import io.tuliplogic.fractals.coloring.Coloring
 import io.tuliplogic.fractals.fractal.ComputationStrategy.{ParallelPoints, ParallelPointsAllPar, ParallelRows, ParallelSliced}
-import scalaz.zio.clock.Clock
-import scalaz.zio.console.Console
-import scalaz.zio.duration._
-import scalaz.zio.{Queue, Schedule, ZIO, clock, console}
+import zio.clock.Clock
+import zio.console.Console
+import zio.duration._
+import zio.{Queue, Schedule, ZIO, clock, console}
 
 object fractal {
 

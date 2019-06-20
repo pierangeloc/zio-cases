@@ -3,9 +3,9 @@ package io.tuliplogic.fractals
 import io.tuliplogic.fractals.algo.FractAlgo
 import io.tuliplogic.fractals.coloring.Coloring
 import io.tuliplogic.fractals.fractal.ComputationStrategy
-import scalaz.zio.clock.Clock
-import scalaz.zio.{App, ZIO, console}
-import scalaz.zio.console.Console
+import zio.clock.Clock
+import zio.{App, ZIO, console}
+import zio.console.Console
 
 /**
   *

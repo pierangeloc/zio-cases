@@ -2,7 +2,7 @@ package io.tuliplogic.fractals.canvas
 
 import io.tuliplogic.fractals.ColoredPoint
 import scalafx.scene.canvas.Canvas
-import scalaz.zio.ZIO
+import zio.ZIO
 
 /**
   *

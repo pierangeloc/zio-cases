@@ -2,8 +2,7 @@ package io.tuliplogic.repository
 
 import io.tuliplogic.model.errors.Error.{UserAlreadyExists, UserNotFound}
 import io.tuliplogic.model.user.{User, UserId}
-import scalaz.zio
-import scalaz.zio.{Ref, UIO, ZIO}
+import zio.{Ref, UIO, ZIO}
 
 trait UserRepository {
   def userRepository: UserRepository.Service[Any]

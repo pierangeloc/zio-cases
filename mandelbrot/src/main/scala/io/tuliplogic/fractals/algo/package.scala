@@ -1,5 +1,5 @@
 package io.tuliplogic.fractals
-import scalaz.zio.ZIO
+import zio.ZIO
 
 /**
   *

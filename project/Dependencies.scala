@@ -5,8 +5,8 @@ object Dependencies {
   lazy val cats       = "org.typelevel" %% "cats-core"   % "1.5.0"
   lazy val catsEffect = "org.typelevel" %% "cats-effect" % "1.1.0"
 
-  lazy val zio        = "org.scalaz"    %% "scalaz-zio"              % "1.0-RC5"
-  lazy val zioCats    = "org.scalaz"    %% "scalaz-zio-interop-cats" % "1.0-RC5"
+  lazy val zio        = "dev.zio"       %% "zio"              % "1.0.0-RC8-6"
+  lazy val zioCats    = "dev.zio"       %% "zio-interop-cats" % "1.0.0-RC8-6"
 
   lazy val fs2 = "co.fs2" %% "fs2-io" % "1.0.0"
 

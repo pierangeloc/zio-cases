@@ -15,9 +15,9 @@ import scalafx.scene.Scene
 import scalafx.scene.layout.{HBox, VBox}
 import scalafx.scene.paint.Color.Black
 import scalafx.Includes._
-import scalaz.zio.DefaultRuntime
-import scalaz.zio.clock.Clock
-import scalaz.zio.console.Console
+import zio.DefaultRuntime
+import zio.clock.Clock
+import zio.console.Console
 import scalafx.scene.canvas.Canvas
 import scalafx.scene.control.{Button, Label, RadioButton, TextField, ToggleGroup}
 import scalafx.scene.paint.Color

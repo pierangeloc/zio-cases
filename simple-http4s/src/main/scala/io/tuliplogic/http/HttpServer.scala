@@ -5,9 +5,9 @@ import org.http4s.{HttpApp, HttpRoutes}
 import org.http4s.implicits._
 import org.http4s.server.Router
 import org.http4s.server.blaze.BlazeServerBuilder
-import scalaz.zio.clock.Clock
-import scalaz.zio.interop.catz._
-import scalaz.zio.{TaskR, ZIO}
+import zio.clock.Clock
+import zio.interop.catz._
+import zio.{TaskR, ZIO}
 
 class HttpServer[R <: Clock with UserRepository](routes: UserService[R]) {
   private val basePath = "/zio-cases-http4s"
