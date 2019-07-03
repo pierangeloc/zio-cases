@@ -1,6 +1,6 @@
 package io.tuliplogic.fractals
 
-import io.tuliplogic.fractals.algo.FractAlgo
+import io.tuliplogic.fractals.algo.FractalAlgo
 import io.tuliplogic.fractals.canvas.ZCanvas
 import io.tuliplogic.fractals.coloring.Coloring
 import io.tuliplogic.fractals.fractal.ComputationStrategy.{ParallelPoints, ParallelPointsAllPar, ParallelRows, ParallelSliced}
@@ -19,12 +19,10 @@ object fractal {
     case class  ParallelSliced(sliceSize: Int)   extends ComputationStrategy
   }
 
-  def computeColor(complexRectangle: ComplexRectangle, maxIterations: Int, bailout: Int)(p: Pixel): ZIO[Coloring with FractAlgo, Nothing, ColoredPoint] = for {
-    iter  <- algo.iterations(complexRectangle.pixelToComplex(p), bailout, maxIterations)
+  def computeColor(complexRectangle: ComplexRectangle, maxIterations: Int, divergeThreshold: Int)(p: Pixel): ZIO[Coloring with FractalAlgo, Nothing, ColoredPoint] = for {
+    iter  <- algo.iterations(complexRectangle.pixelToComplex(p), divergeThreshold, maxIterations)
     color <- coloring.getColor(iter, maxIterations)
   } yield ColoredPoint(p, color)
-
-  //f = computeColor(complexRectangle, maxIterations, maxSquaredModule).tupled
 
   def onAllPoints[R, A](
     resolution: Frame,
@@ -45,7 +43,7 @@ object fractal {
     }
 
   def calculate(strategy: ComputationStrategy)
-    (maxIterations: Int, maxSquaredModule: Int, frameWidth: Int, frameHeight: Int): ZIO[Console with Clock with Coloring with FractAlgo, Nothing, (List[ColoredPoint], Long)] = for {
+    (maxIterations: Int, maxSquaredModule: Int, frameWidth: Int, frameHeight: Int): ZIO[Console with Clock with Coloring with FractalAlgo, Nothing, (List[ColoredPoint], Long)] = for {
     startCalc        <- clock.nanoTime
     _                <- console.putStrLn(s"Computing with strategy: $strategy")
     resolution       <- ZIO.succeed(Frame(frameWidth, frameHeight))
@@ -57,7 +55,7 @@ object fractal {
 
   def calculateAllAndThenDrawAll[DrawOn](strategy: ComputationStrategy)
     (maxIterations: Int, maxSquaredModule: Int, frameWidth: Int, frameHeight: Int)
-    (drawOn: DrawOn): ZIO[Console with Clock with ZCanvas[DrawOn] with Coloring with FractAlgo, Nothing, Unit] = for {
+    (drawOn: DrawOn): ZIO[Console with Clock with ZCanvas[DrawOn] with Coloring with FractalAlgo, Nothing, Unit] = for {
     coloredPoints <- calculate(strategy)(maxIterations, maxSquaredModule, frameWidth, frameHeight)
     startDraw     <- clock.nanoTime
     _             <- ZIO.foreach(coloredPoints._1)(coloredPoint => canvas.canvasService[DrawOn].drawPoint(coloredPoint)(drawOn))
@@ -67,7 +65,7 @@ object fractal {
 
   def calculateAndDraw[DrawOn](strategy: ComputationStrategy)
     (maxIterations: Int, maxSquaredModule: Int, frameWidth: Int, frameHeight: Int)
-    (drawOn: DrawOn): ZIO[Console with Clock with ZCanvas[DrawOn] with Coloring with FractAlgo, Nothing, Unit] = for {
+    (drawOn: DrawOn): ZIO[Console with Clock with ZCanvas[DrawOn] with Coloring with FractalAlgo, Nothing, Unit] = for {
     startCalc        <- clock.nanoTime
     _                <- console.putStrLn(s"Computing with strategy: $strategy")
     resolution       <- ZIO.succeed(Frame(frameWidth, frameHeight))

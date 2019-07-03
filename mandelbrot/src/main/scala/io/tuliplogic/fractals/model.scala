@@ -1,6 +1,6 @@
 package io.tuliplogic.fractals
 
-import scalafx.scene.paint.Color
+import scalafx.scene.paint
 
 case class Complex(x: Double, y: Double) { self =>
   def +(other: Complex): Complex = Complex(self.x + other.x, self.y + other.y)
@@ -16,6 +16,11 @@ object Complex {
 }
 
 case class Pixel(x: Int, y: Int)
+case class Color(red: Double, green: Double, blue: Double)
+
+object Color {
+  def toCanvasColor(c: Color): paint.Color = paint.Color.rgb(c.red.toInt, c.green.toInt, c.blue.toInt)
+}
 
 final case class ColoredPoint(pixel: Pixel, color: Color) {
   override def toString: String = s"(${pixel.x}, ${pixel.y}, [${color.red}, ${color.green}, ${color.blue}])"
@@ -23,7 +28,7 @@ final case class ColoredPoint(pixel: Pixel, color: Color) {
 
 final case class ColoredBitmap(coloredPoints: List[ColoredPoint])
 
-case class Frame(width: Int = 600, height: Int = 400) {
+case class Frame(width: Int, height: Int) {
   def allPoints: List[Pixel] = for {
     xx <- (0 until width).toList
     yy <- (0 until height).toList

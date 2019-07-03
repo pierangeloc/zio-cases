@@ -1,32 +1,43 @@
 package io.tuliplogic.fractals.canvas
 
-import io.tuliplogic.fractals.ColoredPoint
+import io.tuliplogic.fractals.{Color, ColoredPoint}
 import scalafx.scene.canvas.Canvas
-import zio.ZIO
+import zio.{Ref, ZIO}
 
 /**
   *
   * zio-cases - 2019-04-02
   * Created with ♥ in Amsterdam
+  *
   */
-sealed trait ZCanvas[DrawOn] {
-  def canvas: ZCanvas.Service[DrawOn, Any]
+// TODO: use a Canvas provider that provides a canvas abstraction
+trait ZCanvas {
+  def canvas: ZCanvas.Service[Any]
 }
 
 object ZCanvas {
 
-  trait Service[-DrawOn, -R] {
-    def drawPoint(p: ColoredPoint)(drawOn: DrawOn): ZIO[R, Nothing, Unit]
+  trait Service[R] {
+    def drawPoint(p: ColoredPoint): ZIO[R, Nothing, Unit]
   }
 
-  trait ZCanvasFxLive extends ZCanvas[Canvas] {
+  class CanvasFx(cvs: Ref[Canvas]) extends ZCanvas {
 
-    val canvas = new ZCanvas.Service[Canvas, Any] {
-      override def drawPoint(coloredPoint: ColoredPoint)(drawOn: Canvas): ZIO[Any, Nothing, Unit] = {
-        def setColor: ZIO[Canvas, Nothing, Unit] = ZIO.access(_.graphicsContext2D.setFill(coloredPoint.color))
-        def drawOval: ZIO[Canvas, Nothing, Unit] = ZIO.access(_.graphicsContext2D.fillOval(coloredPoint.pixel.x.toDouble, coloredPoint.pixel.y.toDouble, 1.0, 1.0))
-        (setColor *> drawOval).provide(drawOn)
-      }
+    private def setColor(coloredPoint: ColoredPoint)(canvas: Canvas): ZIO[Any, Nothing, Unit] =
+      ZIO.effectTotal(
+        canvas.graphicsContext2D.setFill(Color.toCanvasColor(coloredPoint.color))
+      )
+
+    private def drawOval(coloredPoint: ColoredPoint)(canvas: Canvas): ZIO[Any, Nothing, Unit] =
+      ZIO.effectTotal(
+        canvas.graphicsContext2D.fillOval(coloredPoint.pixel.x.toDouble, coloredPoint.pixel.y.toDouble, 1.0, 1.0)
+      )
+
+    def canvas: Service[Any] = new ZCanvas.Service[Any] {
+      override def drawPoint(coloredPoint: ColoredPoint): ZIO[Any, Nothing, Unit] = for {
+        theCvs <- cvs.get
+        _      <- setColor(coloredPoint)(theCvs) *> drawOval(coloredPoint)(theCvs)
+      } yield ()
     }
   }
 

@@ -3,7 +3,7 @@ package io.tuliplogic.fractals
 import io.tuliplogic.fractals.UIComponents.FrameSizeSelectUI.box
 import io.tuliplogic.fractals.UIComponents.{FractalTypeUI, FrameSizeSelectUI, FramesUI}
 import io.tuliplogic.fractals.UIModel.FractalType
-import io.tuliplogic.fractals.algo.FractAlgo
+import io.tuliplogic.fractals.algo.FractalAlgo
 import io.tuliplogic.fractals.canvas.ZCanvas.ZCanvasFxLive
 import io.tuliplogic.fractals.coloring.Coloring
 import io.tuliplogic.fractals.fractal.ComputationStrategy
@@ -125,12 +125,12 @@ object FractalUI extends JFXApp {
 
   val rts = new DefaultRuntime {}
 
-  def env(w: Int, h: Int, fractalType: FractalType): ZCanvasFxLive with Console.Live with Clock.Live with Clock with Coloring.AColoring with FractAlgo =
+  def env(w: Int, h: Int, fractalType: FractalType): ZCanvasFxLive with Console.Live with Clock.Live with Clock with Coloring.AColoring with FractalAlgo =
     fractalType match {
       case FractalType.Mandelbrot =>
-        new ZCanvasFxLive with Console.Live with Clock.Live with Coloring.AColoring with FractAlgo.MandelbrotAlgo {}
+        new ZCanvasFxLive with Console.Live with Clock.Live with Coloring.AColoring with FractalAlgo.MandelbrotAlgo {}
       case FractalType.Julia(c_) =>
-        new ZCanvasFxLive with Console.Live with Clock.Live with Coloring.AColoring with FractAlgo.JuliaAlgo {
+        new ZCanvasFxLive with Console.Live with Clock.Live with Coloring.AColoring with FractalAlgo.JuliaAlgo {
           val c = c_
         }
     }
