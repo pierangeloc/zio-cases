@@ -1,8 +1,8 @@
 package io.tuliplogic.fractals.canvas
 
 import io.tuliplogic.fractals.{Color, ColoredPoint}
-import scalafx.scene.canvas.Canvas
-import zio.{Ref, ZIO}
+import scalafx.scene.canvas.{Canvas => JCanvas}
+import zio.{Queue, ZIO}
 
 /**
   *
@@ -10,7 +10,6 @@ import zio.{Ref, ZIO}
   * Created with ♥ in Amsterdam
   *
   */
-// TODO: use a Canvas provider that provides a canvas abstraction
 trait ZCanvas {
   def canvas: ZCanvas.Service[Any]
 }
@@ -21,24 +20,33 @@ object ZCanvas {
     def drawPoint(p: ColoredPoint): ZIO[R, Nothing, Unit]
   }
 
-  class CanvasFx(cvs: Ref[Canvas]) extends ZCanvas {
+  val jCanvas: ZIO[JCanvas, Nothing, ZCanvas] = ZIO.access {
 
-    private def setColor(coloredPoint: ColoredPoint)(canvas: Canvas): ZIO[Any, Nothing, Unit] =
-      ZIO.effectTotal(
-        canvas.graphicsContext2D.setFill(Color.toCanvasColor(coloredPoint.color))
-      )
+    jCanvas => {
+        def setColor(coloredPoint: ColoredPoint): ZIO[Any, Nothing, Unit] = ZIO.effectTotal(
+          jCanvas.graphicsContext2D.setFill(Color.toCanvasColor(coloredPoint.color))
+        )
 
-    private def drawOval(coloredPoint: ColoredPoint)(canvas: Canvas): ZIO[Any, Nothing, Unit] =
-      ZIO.effectTotal(
-        canvas.graphicsContext2D.fillOval(coloredPoint.pixel.x.toDouble, coloredPoint.pixel.y.toDouble, 1.0, 1.0)
-      )
+        def drawOval(coloredPoint: ColoredPoint): ZIO[Any, Nothing, Unit] = ZIO.effectTotal(
+          jCanvas.graphicsContext2D.fillOval(coloredPoint.pixel.x.toDouble, coloredPoint.pixel.y.toDouble, 1.0, 1.0)
+        )
 
-    def canvas: Service[Any] = new ZCanvas.Service[Any] {
-      override def drawPoint(coloredPoint: ColoredPoint): ZIO[Any, Nothing, Unit] = for {
-        theCvs <- cvs.get
-        _      <- setColor(coloredPoint)(theCvs) *> drawOval(coloredPoint)(theCvs)
-      } yield ()
+        new ZCanvas {
+          def canvas: Service[Any] = new Service[Any] {
+          override def drawPoint(coloredPoint: ColoredPoint): ZIO[Any, Nothing, Unit] =
+            setColor(coloredPoint) *> drawOval(coloredPoint)
+        }
+      }
     }
+  }
+
+  val queueCanvas: ZIO[Queue[ColoredPoint], Nothing, ZCanvas] = ZIO.access {
+    queue => new ZCanvas {
+        def canvas: Service[Any] = new Service[Any] {
+          override def drawPoint(coloredPoint: ColoredPoint): ZIO[Any, Nothing, Unit] =
+            queue.offer(coloredPoint).unit
+        }
+      }
   }
 
 }
