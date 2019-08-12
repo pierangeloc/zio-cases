@@ -3,7 +3,8 @@ package io.tuliplogic.fractals
 import io.tuliplogic.fractals.algo.FractalAlgo
 import io.tuliplogic.fractals.canvas.ZCanvas
 import io.tuliplogic.fractals.coloring.Coloring
-import io.tuliplogic.fractals.fractal.ComputationStrategy.{ParallelPoints, ParallelPointsAllPar, ParallelRows, ParallelSliced}
+import io.tuliplogic.fractals.config.ComputationStrategy.{ParallelPoints, ParallelPointsAllPar, ParallelRows, ParallelSliced}
+import io.tuliplogic.fractals.config.Config
 import zio.{UIO, ZIO}
 
 object Compute {

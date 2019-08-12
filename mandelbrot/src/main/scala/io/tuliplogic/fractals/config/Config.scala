@@ -1,6 +1,6 @@
-package io.tuliplogic.fractals
+package io.tuliplogic.fractals.config
 
-import io.tuliplogic.fractals.fractal.ComputationStrategy
+import io.tuliplogic.fractals.{ComplexRectangle, Frame}
 import zio.{UIO, ZIO}
 
 trait Config {
@@ -28,9 +28,16 @@ object Config {
   object StdConfig extends StdConfig
 }
 
-object config extends Config.Service[Config] {
-  override def maxIterations: ZIO[Config, Nothing, Int] = ZIO.accessM(_.configService.maxIterations)
-  override def divergenceThreshold: ZIO[Config, Nothing, Int] = ZIO.accessM(_.configService.divergenceThreshold)
-  override def complexRectangle: ZIO[Config, Nothing, ComplexRectangle] = ZIO.accessM(_.configService.complexRectangle)
-  override def computationStrategy: ZIO[Config, Nothing, ComputationStrategy] = ZIO.accessM(_.configService.computationStrategy)
+sealed trait ComputationStrategy
+
+object ComputationStrategy {
+
+  case class ParallelPoints(parallelism: Int) extends ComputationStrategy
+
+  case object ParallelPointsAllPar extends ComputationStrategy
+
+  case object ParallelRows extends ComputationStrategy
+
+  case class ParallelSliced(sliceSize: Int) extends ComputationStrategy
+
 }

@@ -2,7 +2,7 @@ package io.tuliplogic.fractals
 
 import java.io.IOException
 
-import io.tuliplogic.fractals.Config.StdConfig
+import io.tuliplogic.fractals.config.Config.StdConfig
 import io.tuliplogic.fractals.algo.FractalAlgo.MandelbrotAlgo
 import io.tuliplogic.fractals.canvas.ZCanvas
 import io.tuliplogic.fractals.coloring.Coloring.AColoring
