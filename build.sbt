@@ -72,12 +72,36 @@ lazy val mandelbrot = project
   .settings(commonSettings)
   .settings(
       name := "mandelbrot",
-      libraryDependencies ++= Seq(
+      libraryDependencies ++= (
+        Seq(
           zio,
+          zioCats,
           scalafx,
+          scalaTags,
           scalaTest % Test
+        ) ++ http4sAll ++ circeAll
       )
   )
+
+lazy val frontend = project
+  .in(file("frontend"))
+  .enablePlugins(ScalaJSPlugin)
+  .settings(
+    name := "frontend"
+  )
+  .settings(
+    // Build a js dependencies file
+    skip in packageJSDependencies := false,
+    jsEnv := new org.scalajs.jsenv.nodejs.NodeJSEnv(),
+
+    // Put the jsdeps file on a place reachable for the server
+    crossTarget in (Compile, packageJSDependencies) := (resourceManaged in Compile).value,
+    testFrameworks += new TestFramework("utest.runner.Framework"),
+    libraryDependencies ++= Seq(
+      "org.scala-js" %%% "scalajs-dom" % "0.9.7"
+    )
+  )
+
 
 lazy val `simple-http4s` = project
   .in(file("simple-http4s"))

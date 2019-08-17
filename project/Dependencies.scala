@@ -15,12 +15,20 @@ object Dependencies {
   lazy val http4sDsl     = "org.http4s" %% "http4s-dsl"          % "0.20.1"
   lazy val http4sCirce   = "org.http4s" %% "http4s-circe"        % "0.20.1"
 
+  lazy val http4sAll = Seq(http4sServer, http4sClient, http4sDsl, http4sCirce)
+
   lazy val circeCore     = "io.circe"  %% s"circe-core"           % "0.11.1"
   lazy val circeGeneric  = "io.circe"  %% s"circe-generic"        % "0.11.1"
   lazy val circeGenericX = "io.circe"  %% s"circe-generic-extras" % "0.11.1"
+
+  lazy val circeAll = Seq(circeCore, circeGeneric, circeGenericX)
 
   lazy val log4CatsCore  = "io.chrisdavenport" %% s"log4cats-core"  % "0.3.0"
   lazy val log4CatsSlf4j = "io.chrisdavenport" %% s"log4cats-slf4j" % "0.3.0"
   
   lazy val scalafx       = "org.scalafx" %% "scalafx" % "8.0.144-R12"
+
+  lazy val scalaTags     = "com.lihaoyi" %% "scalatags" % "0.6.8"
+
+
 }
