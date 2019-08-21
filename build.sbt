@@ -80,7 +80,20 @@ lazy val mandelbrot = project
           scalaTags,
           scalaTest % Test
         ) ++ http4sAll ++ circeAll
-      )
+      ),
+    // Allows to read the generated JS on client
+    resources in Compile += (fastOptJS in (frontend, Compile)).value.data,
+    // Lets the backend to read the .map file for js
+    resources in Compile += (fastOptJS in (frontend, Compile)).value
+      .map((x: sbt.File) => new File(x.getAbsolutePath + ".map"))
+      .data,
+    // Lets the server read the jsdeps file
+    (managedResources in Compile) += (artifactPath in (frontend, Compile, packageJSDependencies)).value,
+    // do a fastOptJS on reStart
+    reStart := (reStart dependsOn (fastOptJS in (frontend, Compile))).evaluated,
+    // This settings makes reStart to rebuild if a scala.js file changes on the client
+    watchSources ++= (watchSources in frontend).value,
+    mainClass in reStart := Some("io.tuliplogic.fractals.HttpMain")
   )
 
 lazy val frontend = project
@@ -96,7 +109,6 @@ lazy val frontend = project
 
     // Put the jsdeps file on a place reachable for the server
     crossTarget in (Compile, packageJSDependencies) := (resourceManaged in Compile).value,
-    testFrameworks += new TestFramework("utest.runner.Framework"),
     libraryDependencies ++= Seq(
       "org.scala-js" %%% "scalajs-dom" % "0.9.7"
     )
