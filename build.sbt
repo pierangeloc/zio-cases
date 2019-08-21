@@ -103,6 +103,7 @@ lazy val frontend = project
     name := "frontend"
   )
   .settings(
+    scalaJSUseMainModuleInitializer := true,
     // Build a js dependencies file
     skip in packageJSDependencies := false,
     jsEnv := new org.scalajs.jsenv.nodejs.NodeJSEnv(),
@@ -110,7 +111,9 @@ lazy val frontend = project
     // Put the jsdeps file on a place reachable for the server
     crossTarget in (Compile, packageJSDependencies) := (resourceManaged in Compile).value,
     libraryDependencies ++= Seq(
-      "org.scala-js" %%% "scalajs-dom" % "0.9.7"
+      "dev.zio"      %%% "zio"         % "1.0.0-RC11-1",
+      "org.scala-js" %%% "scalajs-dom" % "0.9.7",
+      "com.lihaoyi"  %%% "scalatags"   % "0.6.8"
     )
   )
 

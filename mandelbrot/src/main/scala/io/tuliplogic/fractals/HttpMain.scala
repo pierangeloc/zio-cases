@@ -55,9 +55,9 @@ object Html {
         link(rel:="shortcut icon", media:="image/png", href:="/assets/images/favicon.png")
       ),
       body(
-        h1("ZIO fractals"),
-        canvas(width:= 640, height := 480, color := "blue"),
-        button("draw", onclick := "FrontendApp.greet()"),
+//        h1("ZIO fractals"),
+//        canvas(id := "canvas", width:= 640, height := 480, color := "blue"),
+//        button("draw", onclick := "FrontendApp.greet()"),
         jsScripts
       )
     ).render
