@@ -2,7 +2,7 @@ package io.tuliplogic.fractals.canvas
 
 import io.tuliplogic.fractals.{Color, ColoredPoint}
 import scalafx.scene.canvas.{Canvas => JCanvas}
-import zio.{Queue, ZIO}
+import zio.{Queue, Task, ZIO}
 
 /**
   *
@@ -47,6 +47,14 @@ object ZCanvas {
             queue.offer(coloredPoint).unit
         }
       }
+  }
+
+  val fs2QueueCanvas: ZIO[fs2.concurrent.Queue[Task, ColoredPoint], Nothing, ZCanvas] = ZIO.access {
+    queue => new ZCanvas {
+      override def canvas: Service[Any] = new Service[Any] {
+        override def drawPoint(coloredPoint: ColoredPoint): ZIO[Any, Nothing, Unit] = queue.offer1(coloredPoint).orDie.unit
+      }
+    }
   }
 
 }

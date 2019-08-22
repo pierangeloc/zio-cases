@@ -12,10 +12,6 @@ import zio.console.{Console, putStr}
 
 object ConsoleMain extends App {
 
-  val maxIterations = 5000
-  val divergenceThreshold = 8
-  val complexRectangle = ComplexRectangle(-2, 1, -1, 1, Frame(640, 480))
-
   type Q = Queue[ColoredPoint]
 
   def consumeFromQueue(queue: Q): ZIO[Console, IOException, Unit] = for {
