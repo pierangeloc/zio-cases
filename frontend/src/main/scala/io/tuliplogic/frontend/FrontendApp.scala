@@ -5,9 +5,10 @@ import zio.{App, Task, UIO, ZIO, console}
 import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
 import org.scalajs.dom
 import dom.document
+import org.scalajs.dom.raw.Event
 import scalatags.JsDom._
 import scalatags.JsDom.all._
-import zio.console.putStr
+import zio.console.{Console, putStr}
 
 /**
  * FrontendApp entry point
@@ -22,21 +23,25 @@ object FrontendApp extends App {
     ).foldM(err => putStr(s"Error running application $err") *> ZIO.succeed(1), _ => ZIO.succeed(0))
 
 
-  def buildDom(): Task[Unit] = for {
-    env  <- ZIO.environment
+  def buildDom(): ZIO[Environment, Throwable, Unit] = for {
+    rts  <- ZIO.runtime[Environment]
+    env  <- ZIO.environment[Environment]
     body <- Task.effectTotal(document.body)
     canvas <- ZIO.foreach(
       List(
-        h1("ZIO fractals"),
-        canvas(id := "canvas", width:= 640, height := 480, color := "blue"),
-        button("draw", onclick := "FrontendApp.greet()"),
-      ))(el => Task.effect(body.appendChild(el.render)))
+        h1("ZIO fractals").render,
+        canvas(id := "canvas", width:= 640, height := 480, color := "blue").render,
+        {
+          val b = button("draw").render
+          b.addEventListener(`type` = "click", listener = (e: Event) => rts.unsafeRun(greet().provide(env)))
+          b
+        },
+      ))(el => Task.effect(body.appendChild(el)))
     }
    yield ()
 
-  @JSExport
-  def greet(): Unit = {
-    println("Eccoci!")
+  def greet(): ZIO[Console, Nothing, Unit] = {
+    console.putStrLn("Eccoci!")
   }
 
 }
