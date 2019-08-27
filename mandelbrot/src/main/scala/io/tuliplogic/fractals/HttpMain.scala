@@ -109,7 +109,7 @@ object Html {
   def computeFs2Stream: Stream[Task, String] = for {
     q <- Stream.eval(Fs2Q.unbounded[Task, ColoredPoint])
     _ <- Stream.eval(calculateAndPutOnQueue(q))
-    cp <- q.dequeue
+    cp <- q.dequeue.take(100)
   } yield cp.toString
 
 }
