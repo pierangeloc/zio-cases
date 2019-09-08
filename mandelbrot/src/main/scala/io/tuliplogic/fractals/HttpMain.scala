@@ -106,10 +106,11 @@ object Html {
       }
     }.provide(queue).unit
 
+  import scala.concurrent.duration._
   def computeFs2Stream: Stream[Task, String] = for {
-    q <- Stream.eval(Fs2Q.unbounded[Task, ColoredPoint])
-    _ <- Stream.eval(calculateAndPutOnQueue(q))
-    cp <- q.dequeue.take(100)
+    q  <- Stream.eval(Fs2Q.unbounded[Task, ColoredPoint])
+    _  <- Stream.eval(calculateAndPutOnQueue(q))
+    cp <- q.dequeue.metered(500.millis).evalTap(chunk => Task.effect(println(s"emitting chunk {$chunk}"))) //slow chunks
   } yield cp.toString
 
 }

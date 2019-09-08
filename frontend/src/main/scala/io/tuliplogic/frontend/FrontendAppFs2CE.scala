@@ -54,28 +54,32 @@ object FrontendAppFs2CE extends IOApp {
    yield ()
 
   def zioEventListener: Event => Unit = e =>
-    (greet() >> getFractalsData.compile.drain).unsafeRunAsyncAndForget()
+    (greet() >> getFractalsData
+      .through(fs2.text.utf8Decode)
+      .take(200)
+      .evalMap(putStrLn)
+      .compile.drain).unsafeRunAsyncAndForget()
+  //TODO: interrupt when the stream is finished
 
   def greet() = putStrLn("Eccoci!")
 
-  def getFractalsData: Stream[IO, ByteBuffer] =
+  def getFractalsData: Stream[IO, Byte] =
     for {
       reader <- Stream.eval(
           promiseToTask(Fetch.fetch(plotFractalsUrl)).map(_.body.getReader)
         )
-      bb <- processReader(reader).take(50)
-    } yield bb
+      bb <- processReader(reader)
+      b  <- Stream.emits(bb.array())
+    } yield b
 
   def processReader(reader: ReadableStreamReader[Uint8Array]): Stream[IO, ByteBuffer] =
     Stream.eval(promiseToTask(reader.read())).repeat
       .evalMap{ chunk =>
-        (putStrLn(s"chunk done: ${chunk.done}") >> IO.pure(chunk))
+        (putStrLn(s"chunk done: ${chunk.done}, chunk size: ${chunk.value.size}") >> IO.pure(chunk))
       }
       .takeWhile(_.done == false)
-      .evalMap { chunk =>
-        putStrLn(s"chunk done: ${chunk.done}") >> IO.pure(
-            ByteBuffer.wrap(new Int8Array(chunk.value.buffer).toArray)
-        )
+      .map { chunk =>
+        ByteBuffer.wrap(new Int8Array(chunk.value.buffer).toArray)
       }
 
   def promiseToTask[A](p: Promise[A]): IO[A] = IO.fromFuture(IO(p.toFuture))
