@@ -1,31 +1,32 @@
 package io.tuliplogic.frontend
 
-
 import java.nio.ByteBuffer
 
-import zio.{App, IO, Runtime, Task, UIO, ZIO, console}
-import cats.syntax.either._
-
-import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
-import org.scalajs.dom
-import dom.document
-import org.scalajs.dom.experimental.{Fetch, ReadableStream, ReadableStreamReader}
-
-import scala.scalajs.js.typedarray._
-import org.scalajs.dom.ext.Ajax
+import org.scalajs.dom.document
+import org.scalajs.dom.experimental.{Fetch, ReadableStreamReader}
 import org.scalajs.dom.raw.Event
-
-import scala.scalajs.js.{JSConverters, Promise}
-import scalatags.JsDom._
 import scalatags.JsDom.all._
-import zio.console.{Console, putStr}
-import zio.stream.{Stream, ZSink, ZStream}
+import cats._
+import implicits._
+import cats.effect._
+import fs2.Stream.Compiler
+import fs2._
+import zio._
+import zio.console.Console
+import zio.interop.catz._
+import zio.{App, Runtime, Task, UIO, ZIO, console}
+
+import scala.scalajs.js.Promise
+import scala.scalajs.js.annotation.JSExportTopLevel
+import scala.scalajs.js.typedarray._
 
 /**
  * FrontendApp entry point
  */
 @JSExportTopLevel("FrontendApp")
-object FrontendApp extends App {
+object FrontendAppFs2 extends App {
+
+  implicitly[Sync[Task]]
 
   sealed trait Error extends Throwable
   object Error {
@@ -33,12 +34,13 @@ object FrontendApp extends App {
   }
 
   val plotFractalsUrl = "http://localhost:8080/zio-mandelbrot/plot-fractals"
+  type C[A] = RIO[Console, A]
 
   override def run(args: List[String]): ZIO[FrontendApp.Environment, Nothing, Int] =
     (
       buildDom() *>
       console.putStrLn("Eccoci!")
-    ).foldM(err => putStr(s"Error running application $err") *> ZIO.succeed(1), _ => ZIO.succeed(0))
+    ).foldM(err => console.putStr(s"Error running application $err") *> ZIO.succeed(1), _ => ZIO.succeed(0))
 
 
   def buildDom(): ZIO[Environment, Throwable, Unit] = for {
@@ -69,35 +71,35 @@ object FrontendApp extends App {
    yield ()
 
   def zioEventListener(rts: Runtime[Environment], env: Environment): Event => Unit = e => rts.unsafeRun(
-    (greet() *> getFractalsData().run(zio.stream.Sink.drain)
-      ).provide(env)
+    greet().provide(env) *> getFractalsData(env).compile.drain
   )
 
-  def greet(): ZIO[Console, Nothing, Unit] = {
+  def greet(): ZIO[Console, Throwable, Unit] = {
     console.putStrLn("Eccoci!")
   }
 
 
-  def getFractalsData(): ZStream[Console, Throwable, ByteBuffer] =
+  def getFractalsData(c: Console): Stream[Task, ByteBuffer] =
     for {
-      reader <- Stream.fromEffect(
+      reader <- Stream.eval(
           promiseToTask(Fetch.fetch(plotFractalsUrl)).map(_.body.getReader)
         )
-      bb <- processReader(reader).take(50)
+      bb <- processReader(reader)(c).take(50)
     } yield bb
 
-  def processReader(reader: ReadableStreamReader[Uint8Array]): ZStream[Console, Throwable, ByteBuffer] = {
-    Stream.fromEffect(promiseToTask(reader.read())).forever
-      .mapM { chunk =>
-        console.putStrLn(s"chunk done: ${chunk.done}") *> UIO.succeed(chunk)
+  def processReader(reader: ReadableStreamReader[Uint8Array])(c: Console): Stream[Task, ByteBuffer] =
+    Stream.eval(promiseToTask(reader.read())).repeat
+      .evalMap{ chunk =>
+        (console.putStrLn(s"chunk done: ${chunk.done}") *> UIO.succeed(chunk)).provide(c)
       }
       .takeWhile(_.done == false)
-      .mapM { chunk =>
-        console.putStrLn(s"chunk done: ${chunk.done}") *> ZIO.succeed(
-        ByteBuffer.wrap(new Int8Array(chunk.value.buffer).toArray)
+      .evalMap { chunk =>
+        (
+          console.putStrLn(s"chunk done: ${chunk.done}") *> ZIO.succeed(
+            ByteBuffer.wrap(new Int8Array(chunk.value.buffer).toArray)
         )
+          ).provide(c)
       }
-  }
 
   def promiseToTask[A](p: Promise[A]): Task[A] = Task.fromFuture(implicit ec => p.toFuture)
 

@@ -2,7 +2,8 @@ import sbt._
 
 object Dependencies {
   val http4sVersion = "0.21.0-M4"
-  val zioVersion = "1.0.0-RC8-12"
+  val zioVersion    = "1.0.0-RC12-1"
+  val fs2Version    = "1.1.0-M1"
 
   lazy val scalaTest  = "org.scalatest" %% "scalatest"   % "3.0.5"
   lazy val cats       = "org.typelevel" %% "cats-core"   % "1.5.0"
@@ -11,7 +12,7 @@ object Dependencies {
   lazy val zio        = "dev.zio"       %% "zio"              % zioVersion
   lazy val zioCats    = "dev.zio"       %% "zio-interop-cats" % "2.0.0.0-RC2"
 
-  lazy val fs2 = "co.fs2" %% "fs2-io" % "1.0.0"
+  lazy val fs2 = "co.fs2" %% "fs2-io" % fs2Version
 
   lazy val http4sServer  = "org.http4s" %% "http4s-blaze-server" % http4sVersion
   lazy val http4sClient  = "org.http4s" %% "http4s-blaze-client" % http4sVersion
@@ -32,6 +33,10 @@ object Dependencies {
   lazy val scalafx       = "org.scalafx" %% "scalafx" % "8.0.144-R12"
 
   lazy val scalaTags     = "com.lihaoyi" %% "scalatags" % "0.6.8"
+
+  lazy val zioTest    = "dev.zio" %% "zio-test"     % "1.0.0-RC12-1" % "test"
+  lazy val zioTestSbt = "dev.zio" %% "zio-test-sbt" % "1.0.0-RC12-1" % "test->test;compile->compile"
+
 
 
 }
