@@ -84,22 +84,4 @@ object FrontendAppFs2CE extends IOApp {
 
   def promiseToTask[A](p: Promise[A]): IO[A] = IO.fromFuture(IO(p.toFuture))
 
-//  def getFractalsData() = {
-//    import com.softwaremill.sttp._
-//    import com.softwaremill.sttp.impl.monix.FetchMonixBackend
-//    import monix.execution.Scheduler.Implicits.global
-//
-//    implicit val sttpBackend = FetchMonixBackend()
-//
-//    val response: eval.Task[Response[Observable[ByteBuffer]]] = for {
-//      resp <- sttp
-//        .get(uri"$plotFractalsUrl")
-//        .response(asStream[Observable[ByteBuffer]])
-//        .send()
-//      observable <- MonixTask.fromEither(resp.body.leftMap(Error.Generic).map(_.toReactivePublisher))
-//    } yield ???
-
-
-
-
 }

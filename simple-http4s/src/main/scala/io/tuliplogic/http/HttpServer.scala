@@ -7,12 +7,12 @@ import org.http4s.server.Router
 import org.http4s.server.blaze.BlazeServerBuilder
 import zio.clock.Clock
 import zio.interop.catz._
-import zio.{TaskR, ZIO}
+import zio.{RIO, ZIO}
 
 class HttpServer[R <: Clock with UserRepository](routes: UserService[R]) {
   private val basePath = "/zio-cases-http4s"
 
-  type AppTask[A] = TaskR[R, A]
+  type AppTask[A] = RIO[R, A]
 
   val router: HttpRoutes[AppTask] = Router[AppTask](basePath -> routes.httpRoutes)
 

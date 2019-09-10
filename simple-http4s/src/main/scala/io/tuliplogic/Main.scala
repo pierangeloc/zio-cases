@@ -1,13 +1,13 @@
 package io.tuliplogic
 
+import cats.effect.ConcurrentEffect
 import io.tuliplogic.http.HttpServer
 import io.tuliplogic.repository.UserRepository
 import io.tuliplogic.repository.UserRepository.MemUserRepository
-import zio.{Ref, TaskR, ZIO}
+import zio.{App, RIO, Ref, ZIO}
 import zio.clock.Clock
 import io.tuliplogic.http.UserService
 import io.tuliplogic.model.user.{User, UserId}
-import zio.App
 import zio.console._
 
 /**
@@ -17,7 +17,7 @@ import zio.console._
  */
 object Main extends App {
   type AppEnvironment = Clock with UserRepository
-  type AppTask[A] = TaskR[AppEnvironment, A]
+  type AppTask[A] = RIO[AppEnvironment, A]
 
   override def run(args: List[String]): ZIO[Main.Environment, Nothing, Int] =
     (

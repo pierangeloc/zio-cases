@@ -1,6 +1,6 @@
 package io.tuliplogic.fractals
 
-import cats.effect.Blocker
+import cats.effect
 import fs2.Stream
 import io.tuliplogic.fractals.algo.FractalAlgo.MandelbrotAlgo
 import io.tuliplogic.fractals.canvas.ZCanvas
@@ -9,33 +9,46 @@ import io.tuliplogic.fractals.config.Config.StdConfig
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.Router
 import org.http4s.server.blaze.BlazeServerBuilder
-import zio.console.{Console, putStr}
-import zio.{App, Queue, Task, UIO, ZIO, blocking}
+import zio.console.putStr
+import zio._
 import zio.interop.catz._
 import zio.interop.catz.implicits._
+import cats.effect.{Async, Blocker, ConcurrentEffect, ExitCode, IOApp, Timer}
 import org.http4s.syntax.all._
 import org.http4s.server.middleware.PushSupport._
 import scalatags.Text.all.Modifier
 import fs2.concurrent.{Queue => Fs2Q}
 
-object HttpMain extends App {
+import scala.io.Source
+
+
+object HttpMain extends CatsApp {
   val rootPath = "zio-mandelbrot"
 
-  override def run(args: List[String]): ZIO[HttpMain.Environment, Nothing, Int] =
+  //TODO: fix this implicits resolution issue, they can be found here but not when building BlazeServerBuilder. For now we pass them explicitly
+  val ce = implicitly[ConcurrentEffect[Task]]
+  val tr = implicitly[Timer[Task]]
+
+
+  override def run(args: List[String]): ZIO[HttpMain.Environment, Nothing, Int] = {
+
     for {
       blocker <- blocking.blockingExecutor.map(ex => Blocker.liftExecutionContext(ex.asEC))
-      res <- ZIO.runtime[Environment].flatMap { implicit rts =>
-        BlazeServerBuilder[Task]
-          .bindHttp(8080, "localhost")
-          .withHttpApp(
-            Router[Task]( s"/$rootPath" -> Html.service(blocker)).orNotFound
-          )
-          .serve
-          .compile
-          .drain
-          .foldM(err => putStr(s"Error running application $err") *> ZIO.succeed(1), _ => ZIO.succeed(0))
-      }
+      _       <- zio.console.putStrLn(getClass.getResourceAsStream("/frontend-fastopt.js").toString)
+      _       <- zio.console.putStrLn(Source.fromResource("/frontend-fastopt.js").mkString)
+      res     <- ZIO.runtime[Environment].flatMap { implicit rts =>
+                BlazeServerBuilder[zio.Task](ce, tr)
+                  .bindHttp(8080, "localhost")
+                  .withHttpApp(
+                    Router[Task](s"/$rootPath" -> Html.service(blocker)).orNotFound
+                  )
+                  .serve
+                  .compile
+                  .drain
+                  .foldM(err => putStr(s"Error running application $err") *> ZIO.succeed(1), _ => ZIO.succeed(0))
+              }
     } yield res
+  }
 }
 
 
@@ -69,7 +82,7 @@ object Html {
     ).render
   )
 
-  def service(blocker: Blocker) = {
+  def service(blocker: Blocker)(implicit timer: Timer[Task]): HttpRoutes[Task] = {
     object dsl extends Http4sDsl[Task]
     import dsl._
 
@@ -107,10 +120,13 @@ object Html {
     }.provide(queue).unit
 
   import scala.concurrent.duration._
-  def computeFs2Stream: Stream[Task, String] = for {
+  import io.circe.generic.auto._
+  import io.circe.syntax._
+
+  def computeFs2Stream(implicit timer: Timer[Task]): Stream[Task, String] = for {
     q  <- Stream.eval(Fs2Q.unbounded[Task, ColoredPoint])
     _  <- Stream.eval(calculateAndPutOnQueue(q))
     cp <- q.dequeue.metered(500.millis).evalTap(chunk => Task.effect(println(s"emitting chunk {$chunk}"))) //slow chunks
-  } yield cp.toString
+  } yield cp.asJson.noSpaces
 
 }

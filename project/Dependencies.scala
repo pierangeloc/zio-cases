@@ -1,16 +1,20 @@
 import sbt._
 
 object Dependencies {
-  val http4sVersion = "0.21.0-M4"
-  val zioVersion    = "1.0.0-RC12-1"
-  val fs2Version    = "1.1.0-M1"
+  val http4sVersion     = "0.21.0-M4"
+  val zioVersion        = "1.0.0-RC12-1"
+  val zioCatsVersion    = "2.0.0.0-RC3"
+  val fs2Version        = "1.1.0-M2"
+  val catsVersion       = "2.0.0-RC2"
+  val catsEffectVersion = "2.0.0"
+  val circeVersion      = "0.12.0-RC4"
 
   lazy val scalaTest  = "org.scalatest" %% "scalatest"   % "3.0.5"
-  lazy val cats       = "org.typelevel" %% "cats-core"   % "1.5.0"
-  lazy val catsEffect = "org.typelevel" %% "cats-effect" % "2.0.0-M5"
+  lazy val cats       = "org.typelevel" %% "cats-core"   % catsVersion
+  lazy val catsEffect = "org.typelevel" %% "cats-effect" % catsEffectVersion
 
   lazy val zio        = "dev.zio"       %% "zio"              % zioVersion
-  lazy val zioCats    = "dev.zio"       %% "zio-interop-cats" % "2.0.0.0-RC2"
+  lazy val zioCats    = "dev.zio"       %% "zio-interop-cats" % zioCatsVersion
 
   lazy val fs2 = "co.fs2" %% "fs2-io" % fs2Version
 
@@ -21,9 +25,9 @@ object Dependencies {
 
   lazy val http4sAll = Seq(http4sServer, http4sClient, http4sDsl, http4sCirce)
 
-  lazy val circeCore     = "io.circe"  %% s"circe-core"           % "0.11.1"
-  lazy val circeGeneric  = "io.circe"  %% s"circe-generic"        % "0.11.1"
-  lazy val circeGenericX = "io.circe"  %% s"circe-generic-extras" % "0.11.1"
+  lazy val circeCore     = "io.circe"  %% s"circe-core"           % circeVersion
+  lazy val circeGeneric  = "io.circe"  %% s"circe-generic"        % circeVersion
+  lazy val circeGenericX = "io.circe"  %% s"circe-generic-extras" % circeVersion
 
   lazy val circeAll = Seq(circeCore, circeGeneric, circeGenericX)
 
