@@ -34,8 +34,6 @@ object HttpMain extends CatsApp {
 
     for {
       blocker <- blocking.blockingExecutor.map(ex => Blocker.liftExecutionContext(ex.asEC))
-      _       <- zio.console.putStrLn(getClass.getResourceAsStream("/frontend-fastopt.js").toString)
-      _       <- zio.console.putStrLn(Source.fromResource("/frontend-fastopt.js").mkString)
       res     <- ZIO.runtime[Environment].flatMap { implicit rts =>
                 BlazeServerBuilder[zio.Task](ce, tr)
                   .bindHttp(8080, "localhost")
