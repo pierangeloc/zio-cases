@@ -1,6 +1,5 @@
 package io.tuliplogic.fractals
 
-import cats.effect
 import fs2.Stream
 import io.tuliplogic.fractals.algo.FractalAlgo.MandelbrotAlgo
 import io.tuliplogic.fractals.canvas.ZCanvas
@@ -13,14 +12,11 @@ import zio.console.putStr
 import zio._
 import zio.interop.catz._
 import zio.interop.catz.implicits._
-import cats.effect.{Async, Blocker, ConcurrentEffect, ExitCode, IOApp, Timer}
+import cats.effect.{Blocker, ConcurrentEffect, Timer}
 import org.http4s.syntax.all._
 import org.http4s.server.middleware.PushSupport._
 import scalatags.Text.all.Modifier
 import fs2.concurrent.{Queue => Fs2Q}
-
-import scala.io.Source
-
 
 object HttpMain extends CatsApp {
   val rootPath = "zio-mandelbrot"
@@ -28,7 +24,6 @@ object HttpMain extends CatsApp {
   //TODO: fix this implicits resolution issue, they can be found here but not when building BlazeServerBuilder. For now we pass them explicitly
   val ce = implicitly[ConcurrentEffect[Task]]
   val tr = implicitly[Timer[Task]]
-
 
   override def run(args: List[String]): ZIO[HttpMain.Environment, Nothing, Int] = {
 
@@ -101,7 +96,7 @@ object Html {
           .map(_.push("/image.jpg")(req))
 
       case req @ GET -> Root / "plot-fractals" =>
-        Ok(computeFs2Stream)
+        Ok(computeFs2Stream.intersperse("\n"))
     }
 
   }
@@ -124,7 +119,10 @@ object Html {
   def computeFs2Stream(implicit timer: Timer[Task]): Stream[Task, String] = for {
     q  <- Stream.eval(Fs2Q.unbounded[Task, ColoredPoint])
     _  <- Stream.eval(calculateAndPutOnQueue(q))
-    cp <- q.dequeue.metered(500.millis).evalTap(chunk => Task.effect(println(s"emitting chunk {$chunk}"))) //slow chunks
+    cp <- q.dequeue
+//      .metered(1.seconds)
+//        .take(1000)
+      .evalTap(chunk => Task.effect(println(s"emitting chunk {$chunk}"))) //slow chunks
   } yield cp.asJson.noSpaces
 
 }

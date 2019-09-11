@@ -117,15 +117,19 @@ lazy val frontend = project
     // Put the jsdeps file on a place reachable for the server
     crossTarget in (Compile, packageJSDependencies) := (resourceManaged in Compile).value,
     libraryDependencies ++= Seq(
-      "dev.zio"               %%% "zio"                             % zioVersion,
-      "dev.zio"               %%% "zio-streams"                     % zioVersion,
-      "dev.zio"               %%% "zio-interop-cats"                % "2.0.0.0-RC3",
-      "org.scala-js"          %%% "scalajs-dom"                     % "0.9.7",
-      "com.lihaoyi"           %%% "scalatags"                       % "0.6.8",
-      "com.softwaremill.sttp" %%% "core"                            % "1.6.4",
-      "com.softwaremill.sttp" %%% "monix"                           % "1.6.4",
-      "co.fs2"                %%% "fs2-core"                        % fs2Version,
-      "org.typelevel"         %%% "cats-core"                       % catsVersion
+      "dev.zio"               %%% "zio"                   % zioVersion,
+      "dev.zio"               %%% "zio-streams"           % zioVersion,
+      "dev.zio"               %%% "zio-interop-cats"      % "2.0.0.0-RC3",
+      "org.scala-js"          %%% "scalajs-dom"           % "0.9.7",
+      "com.lihaoyi"           %%% "scalatags"             % "0.6.8",
+      "com.softwaremill.sttp" %%% "core"                  % "1.6.4",
+      "com.softwaremill.sttp" %%% "monix"                 % "1.6.4",
+      "co.fs2"                %%% "fs2-core"              % fs2Version,
+      "io.circe"              %%% "circe-core"            % circeVersion,
+      "io.circe"              %%% "circe-generic"         % circeVersion,
+      "io.circe"              %%% "circe-generic-extras"  % circeVersion,
+      "io.circe"              %%% "circe-parser"          % circeVersion,
+      "org.typelevel"         %%% "cats-core"             % catsVersion
     )
   )
 

@@ -5,14 +5,17 @@ import java.nio.ByteBuffer
 import cats.implicits._
 import cats.effect._
 import fs2._
+import org.scalajs.dom
 import org.scalajs.dom.document
 import org.scalajs.dom.experimental.{Fetch, ReadableStreamReader}
+import org.scalajs.dom.html.Canvas
 import org.scalajs.dom.raw.Event
 import scalatags.JsDom.all._
 
 import scala.scalajs.js.Promise
 import scala.scalajs.js.annotation.JSExportTopLevel
 import scala.scalajs.js.typedarray._
+import scala.concurrent.duration._
 
 /**
  * FrontendApp entry point
@@ -35,35 +38,57 @@ object FrontendAppFs2CE extends IOApp {
     ).redeem(_ => ExitCode.Error, _ => ExitCode.Success)
 
 
-  def buildDom(): IO[Unit] = for {
+  def buildDom(): IO[Canvas] = for {
     body <- IO.delay(document.body)
-    canvas <-
+    c <- IO.delay(canvas(id := "canvas", widthA:= 640, heightA := 480, color := "blue").render)
+    b <- IO.delay {
+      val b = button("draw").render
+      b.addEventListener(
+        `type` = "click",
+        listener = zioEventListener(c)
+      )
+      b
+    }
+    _ <-
       List(
         h1("ZIO fractals").render,
-        canvas(id := "canvas", width:= 640, height := 480, color := "blue").render,
-        {
-          val b = button("draw").render
-          b.addEventListener(
-            `type` = "click",
-            listener = zioEventListener
-          )
-          b
-        },
+        c,
+        b
       ).traverse(el => IO.delay(body.appendChild(el)))
     }
-   yield ()
+   yield c
 
-  def zioEventListener: Event => Unit = e =>
-    (greet() >> getFractalsData
+
+  import io.circe.generic.auto._
+  import io.circe.parser.decode
+
+  def zioEventListener(c: Canvas): Event => Unit = e =>
+    (greet() >> getStreamBytes
       .through(fs2.text.utf8Decode)
-      .take(200)
-      .evalMap(putStrLn)
-      .compile.drain).unsafeRunAsyncAndForget()
+      .through(fs2.text.lines)
+      .map(s => decode[ColoredPoint](s))
+      .collect { case Right(cp) => cp }
+//      .take(100)
+//      .metered(100.millis)
+      .evalMap(cp => paintOnCanvas(cp, c))
+      .compile.drain)
+      .unsafeRunAsyncAndForget()
   //TODO: interrupt when the stream is finished
 
-  def greet() = putStrLn("Eccoci!")
+  def greet() = putStrLn("I'll ask for bytes and will start processing!")
 
-  def getFractalsData: Stream[IO, Byte] =
+  def paintOnCanvas(cp: ColoredPoint, canvas: Canvas): IO[Unit] = IO {
+    type Ctx2D =
+      dom.CanvasRenderingContext2D
+    val ctx = canvas.getContext("2d").asInstanceOf[Ctx2D]
+    val fillStyle = s"rgb(${cp.color.red.toInt}, ${cp.color.green.toInt}, ${cp.color.blue.toInt})"
+//    println(s"fillStyle: $fillStyle")
+//    println(s"ctx.fillRect(${cp.pixel.x}, ${cp.pixel.y}, 0.5, 0.5)")
+    ctx.fillStyle = fillStyle
+    ctx.fillRect(cp.pixel.x, cp.pixel.y, 1, 1)
+  }
+
+  def getStreamBytes: Stream[IO, Byte] =
     for {
       reader <- Stream.eval(
           promiseToTask(Fetch.fetch(plotFractalsUrl)).map(_.body.getReader)
@@ -74,14 +99,11 @@ object FrontendAppFs2CE extends IOApp {
 
   def processReader(reader: ReadableStreamReader[Uint8Array]): Stream[IO, ByteBuffer] =
     Stream.eval(promiseToTask(reader.read())).repeat
-      .evalMap{ chunk =>
-        (putStrLn(s"chunk done: ${chunk.done}, chunk size: ${chunk.value.size}") >> IO.pure(chunk))
-      }
       .takeWhile(_.done == false)
       .map { chunk =>
         ByteBuffer.wrap(new Int8Array(chunk.value.buffer).toArray)
       }
 
-  def promiseToTask[A](p: Promise[A]): IO[A] = IO.fromFuture(IO(p.toFuture))
+  def promiseToTask[A](p: => Promise[A]): IO[A] = IO.fromFuture(IO(p.toFuture))
 
 }

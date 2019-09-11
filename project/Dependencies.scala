@@ -7,7 +7,7 @@ object Dependencies {
   val fs2Version        = "1.1.0-M2"
   val catsVersion       = "2.0.0-RC2"
   val catsEffectVersion = "2.0.0"
-  val circeVersion      = "0.12.0-RC4"
+  val circeVersion      = "0.12.1"
 
   lazy val scalaTest  = "org.scalatest" %% "scalatest"   % "3.0.5"
   lazy val cats       = "org.typelevel" %% "cats-core"   % catsVersion
