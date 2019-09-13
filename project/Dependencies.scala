@@ -4,8 +4,8 @@ object Dependencies {
   val http4sVersion     = "0.21.0-M4"
   val zioVersion        = "1.0.0-RC12-1"
   val zioCatsVersion    = "2.0.0.0-RC3"
-  val fs2Version        = "1.1.0-M2"
-  val catsVersion       = "2.0.0-RC2"
+  val fs2Version        = "2.0.0"
+  val catsVersion       = "2.0.0"
   val catsEffectVersion = "2.0.0"
   val circeVersion      = "0.12.1"
 

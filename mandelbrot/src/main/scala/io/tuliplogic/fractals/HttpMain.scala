@@ -118,11 +118,12 @@ object Html {
 
   def computeFs2Stream(implicit timer: Timer[Task]): Stream[Task, String] = for {
     q  <- Stream.eval(Fs2Q.unbounded[Task, ColoredPoint])
-    _  <- Stream.eval(calculateAndPutOnQueue(q))
-    cp <- q.dequeue
+//    q  <- Stream.eval(Fs2Q.bounded[Task, ColoredPoint](1000))
+    _  <- Stream.eval(calculateAndPutOnQueue(q).fork)
+    cp <- q.dequeueChunk(100)
 //      .metered(1.seconds)
 //        .take(1000)
-      .evalTap(chunk => Task.effect(println(s"emitting chunk {$chunk}"))) //slow chunks
+//      .evalTap(chunk => Task.effect(println(s"emitting chunk {$chunk}"))) //slow chunks
   } yield cp.asJson.noSpaces
 
 }

@@ -31,7 +31,7 @@ object ConsoleMain extends App {
       }.provide(queue).unit
 
   val calculateAndPublishOnQueue: ZIO[Console, IOException, Unit] = for {
-    queue   <- Queue.unbounded[ColoredPoint]
+    queue   <- Queue.bounded[ColoredPoint](1000)
     _       <- console.putStrLn("Let's start this computation, press a key")
     _       <- console.getStrLn
     calculationFiber <- calculateAndPutOnQueue(queue).fork

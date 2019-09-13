@@ -18,7 +18,7 @@ object Config {
 
   trait StdConfig extends Config {
     def configService: Service[Any] = new Service[Any] {
-      def maxIterations: UIO[Int] = UIO.succeed(5000)
+      def maxIterations: UIO[Int] = UIO.succeed(200)
       def divergenceThreshold: UIO[Int] = UIO.succeed(8)
       def complexRectangle: UIO[ComplexRectangle] = UIO.succeed(ComplexRectangle(-2, 1, -1, 1, Frame(640, 480)))
       def computationStrategy: ZIO[Any, Nothing, ComputationStrategy] = UIO.succeed(ComputationStrategy.ParallelRows)
