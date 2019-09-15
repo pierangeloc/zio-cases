@@ -6,6 +6,7 @@ import cats.implicits._
 import cats.effect._
 import cats.effect.concurrent.Ref
 import fs2._
+import io.tuliplogic.frontend.FrontendAppFs2CE.{globalImageData, paintOnImageData}
 import org.scalajs.dom
 import org.scalajs.dom.{ImageData, document}
 import org.scalajs.dom.experimental.{Fetch, ReadableStreamReader}
@@ -33,12 +34,27 @@ object FrontendAppFs2CE extends IOApp {
   }
 
   val plotFractalsUrl = "http://localhost:8080/zio-mandelbrot/plot-fractals"
+
   def putStrLn(s: String): IO[Unit] = IO.delay(println(s))
+
+  def canvas2dCtx(c: Canvas): Ctx2D = c.getContext("2d").asInstanceOf[Ctx2D]
+
+  var globalImageData: ImageData = null;
+  def putImageDataOnCanvas(c: Canvas)(tFrame: Double): Unit = {
+    dom.window.requestAnimationFrame(putImageDataOnCanvas(c))
+//    println(s"putting imageData on canvas at t = $tFrame")
+    if (globalImageData != null) canvas2dCtx(c).putImageData(globalImageData, 0, 0) else ()
+  }
+
 
   override def run(args: List[String]): IO[ExitCode] =
     (
-      buildDom() *>
-      putStrLn("Eccoci!")
+      for {
+        c         <- buildDom()
+        imageData <- IO(canvas2dCtx(c).getImageData(0, 0, c.width, c.height))
+        _         <- IO{println("kfjashlfjashlfkjsdlfjljfdk"); globalImageData = imageData; println("globalimagedata set" + globalImageData)}
+        _         <- IO(putImageDataOnCanvas(c)(0)).start
+      } yield ()
     ).redeem(_ => ExitCode.Error, _ => ExitCode.Success)
 
 
@@ -57,16 +73,43 @@ object FrontendAppFs2CE extends IOApp {
       val b = button("noise").render
       b.addEventListener(
         `type` = "click",
-        listener = showNoise(c)
+        listener = showNoise(canvas2dCtx(c).getImageData(0, 0, c.width, c.height))
       )
       b
     }
-    _ <-
+    redButtonNoStr <- IO.delay {
+      val b = button("red no streams").render
+      b.addEventListener(
+        `type` = "click",
+        listener = showRedNoStreams
+      )
+      b
+    }
+    redButtonStr <- IO.delay {
+        val b = button("red streams").render
+        b.addEventListener(
+          `type` = "click",
+          listener = showRedStreams
+        )
+      b
+    }
+      redButtonChunkedStr <- IO.delay {
+        val b = button("red chunked 640 streams").render
+        b.addEventListener(
+          `type` = "click",
+          listener = showRedChunkedStreams
+        )
+        b
+      }
+      _ <-
       List(
         h1("ZIO fractals").render,
         c,
         fractalButton,
-        noiseButton
+        noiseButton,
+        redButtonNoStr,
+        redButtonStr,
+        redButtonChunkedStr
       ).traverse(el => IO.delay(body.appendChild(el)))
     }
    yield c
@@ -87,42 +130,76 @@ object FrontendAppFs2CE extends IOApp {
       .unsafeRunAsyncAndForget()
   //TODO: interrupt when the stream is finished
 
-  def canvas2dCtx(c: Canvas): Ctx2D = c.getContext("2d").asInstanceOf[Ctx2D]
 
-  def showNoise(c: Canvas): Event => Unit = e => {
+  def showNoise(imageData: ImageData): Event => Unit = e => {
     val pixels = for {
-      rows <- Stream.range(0, c.height)
-      cols <- Stream.range(0, c.width)
+      rows <- Stream.range(0, imageData.height)
+      cols <- Stream.range(0, imageData.width)
     } yield Pixel(rows, cols)
 
     def randomCp(pixel: Pixel): IO[ColoredPoint] = for {
-      rr <- IO(Random.nextInt(256))
-      rg <- IO(Random.nextInt(256))
-      rb <- IO(Random.nextInt(256))
-//      _  <- putStrLn(s"computed rgb for pixel $pixel")
+      start   <- IO(System.currentTimeMillis())
+      rr      <- IO(Random.nextInt(256))
+      rg      <- IO(Random.nextInt(256))
+      rb      <- IO(Random.nextInt(256))
+      elapsed <- IO(System.currentTimeMillis() - start)
+      _       <- if (pixel.x % 100  == 0 && pixel.y % 100 == 0) putStrLn(s"Random pixel generation took $elapsed millis") else IO(())
     } yield ColoredPoint(pixel, Color(rr, rg, rb))
 
-    def putOnCanvas(c: Canvas, imageData: Reff[ImageData])(tFrame: Double): Unit = {
-      dom.window.requestAnimationFrame(putOnCanvas(c, imageData))
-      imageData.get.map(id => canvas2dCtx(c).putImageData(id, 0, 0)).unsafeRunAsyncAndForget()
-    }
-
-    (
-      for {
-        imageData <- Ref.of[IO, ImageData](canvas2dCtx(c).getImageData(0, 0, c.width, c.height))
-        _         <- pixels.covary[IO]
-                       .evalMap { p =>
-                         for {
-                           cp <- randomCp(p)
-                           _  <- paintOnImageData(cp, imageData)
-                           _  <- IO(putOnCanvas(c, imageData)(0))
-                         } yield ()
-                       }.compile.drain
-      } yield ()
+    //running this long stream blocks the event loop. We shoudl find a way to have them running as _microtasks_
+    (for {
+      _ <- putStrLn("computing stream")
+      _ <- pixels.covary[IO].delayBy(10.millis)
+            .evalMap { p =>
+              for {
+//                cp <- randomCp(p)
+                cp <- IO(ColoredPoint(p, Color(255, 0, 0)))
+                _  <- paintOnImageData(cp, imageData)
+              } yield ()
+            }.compile.drain
+      _ <- putStrLn("computed stream")
+    } yield ()
     ).unsafeRunAsyncAndForget()
 
   }
 
+  def showRedNoStreams: Event => Unit = e => {
+    val startTime = System.currentTimeMillis()
+    for {
+      n <- Chunk(0 to globalImageData.width: _*)
+      m <- Chunk(0 to globalImageData.height: _*)
+    } yield paintOnImageDataUnsafe(ColoredPoint(Pixel(n, m), Color(255, 0, 0)), globalImageData)
+    val endTime = System.currentTimeMillis()
+    println(s"show red no streams: elapsed = ${endTime - startTime}")
+  }
+
+  def showRedStreams: Event => Unit = e => {
+    val pixels = for {
+      rows <- Stream.range(0, 640)
+      cols <- Stream.range(0, 480)
+    } yield Pixel(rows, cols)
+    (for {
+      startTime <- IO(System.currentTimeMillis())
+      _ <- pixels.covary[IO].evalMap(p => paintOnImageData(ColoredPoint(p, Color(255, 0, 0)), globalImageData)).compile.drain
+      endTime <- IO(System.currentTimeMillis())
+      _ <- putStrLn(s"show red streams: elapsed = ${endTime - startTime}")
+    } yield ()).unsafeRunSync()
+  }
+
+  def showRedChunkedStreams: Event => Unit = e => {
+    val pixels = for {
+      rows <- Stream.range(0, 640)
+      cols <- Stream.range(0, 480)
+    } yield Pixel(rows, cols)
+    (for {
+      startTime <- IO(System.currentTimeMillis())
+        _ <- pixels.chunkN(640).covary[IO].evalMap { pChunk =>
+          pChunk.traverse(p => paintOnImageData(ColoredPoint(p, Color(255, 0, 0)), globalImageData))
+        }.compile.drain
+        endTime <- IO(System.currentTimeMillis())
+        _ <- putStrLn(s"show red streams: elapsed = ${endTime - startTime}")
+    } yield ()).unsafeRunSync()
+  }
 
   def paintOnCanvas(cp: ColoredPoint, canvas: Canvas): IO[Unit] =
 //    (if (cp.pixel.x % 100 == 0 && cp.pixel.y % 100 == 0) putStrLn(s"painting $cp") else IO(())) >>
@@ -134,15 +211,22 @@ object FrontendAppFs2CE extends IOApp {
     ctx.fillRect(cp.pixel.x, cp.pixel.y, 1, 1)
   }
 
-  def paintOnImageData(cp: ColoredPoint, imageData: Reff[ImageData]): IO[Unit] =
-    imageData.update { id => {
-        val pixelIndex: Int = (cp.pixel.y * id.width + cp.pixel.x) * 4
-        id.data(pixelIndex) = cp.color.red.toInt
-        id.data(pixelIndex + 1) = cp.color.green.toInt
-        id.data(pixelIndex + 2) = cp.color.blue.toInt
-        id.data(pixelIndex + 3) = 255
-        id
-      }
+  def paintOnImageData(cp: ColoredPoint, imageData:ImageData): IO[Unit] =
+    IO.apply {
+      val pixelIndex: Int = (cp.pixel.y * imageData.width + cp.pixel.x) * 4
+      imageData.data(pixelIndex) = cp.color.red.toInt
+      imageData.data(pixelIndex + 1) = cp.color.green.toInt
+      imageData.data(pixelIndex + 2) = cp.color.blue.toInt
+      imageData.data(pixelIndex + 3) = 255
+    }
+
+  def paintOnImageDataUnsafe(cp: ColoredPoint, imageData:ImageData): Unit = {
+//      println(s"putting on imageData $cp")
+      val pixelIndex: Int = (cp.pixel.y * imageData.width + cp.pixel.x) * 4
+      imageData.data(pixelIndex) = cp.color.red.toInt
+      imageData.data(pixelIndex + 1) = cp.color.green.toInt
+      imageData.data(pixelIndex + 2) = cp.color.blue.toInt
+      imageData.data(pixelIndex + 3) = 255
     }
 
   def getStreamBytes: Stream[IO, Byte] =

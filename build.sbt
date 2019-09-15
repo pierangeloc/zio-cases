@@ -109,7 +109,8 @@ lazy val frontend = project
   )
   .settings(
     scalaJSUseMainModuleInitializer := true,
-    mainClass in Compile := Some("io.tuliplogic.frontend.FrontendAppFs2CE"),
+    mainClass in Compile := Some("io.tuliplogic.frontend.FrontendAppFs2WrappedCE"),
+//    mainClass in Compile := Some("io.tuliplogic.frontend.FrontendAppFs2CE"),
     // Build a js dependencies file
     skip in packageJSDependencies := false,
     jsEnv := new org.scalajs.jsenv.nodejs.NodeJSEnv(),
