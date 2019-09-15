@@ -7,6 +7,7 @@ import cats.effect.concurrent.Ref
 import cats.implicits._
 import fs2._
 import fs2.concurrent.Queue
+import io.tuliplogic.frontend.FrontendAppFs2CE.putStrLn
 import org.scalajs.dom
 import org.scalajs.dom.experimental.{Fetch, ReadableStreamReader}
 import org.scalajs.dom.html.Canvas
@@ -134,11 +135,24 @@ object FrontendAppFs2WrappedCE extends IOApp {
     for {
       body         <- Stream.eval(Sync[F].delay(document.body))
       sc           <- Stream.eval(SafeCanvas.addTo[F](body, 640, 480, "canvas"))
-      buttonEvents <- addButton(body, "paint red fs2")
-      _            <- Stream.eval(showRedStreams(sc))
+      buttonEvents <- addButton(body, "paint noise fs2")
+//      _            <- Stream.eval(showNoiseStreams(sc))
+      _            <- Stream.eval(showFractals(sc))
     } yield ()
 
-  def showRedStreams[F[_]: ConcurrentEffect](sc: SafeCanvas[F]): F[Unit] = {
+  def randomCp[F[_]](pixel: Pixel)(implicit F: Sync[F]): F[ColoredPoint] = for {
+    start   <- F.delay(System.currentTimeMillis)
+      rr      <- F.delay(Random.nextInt(256))
+      rg      <- F.delay(Random.nextInt(256))
+      rb      <- F.delay(Random.nextInt(256))
+      elapsed <- F.delay(System.currentTimeMillis() - start)
+  } yield ColoredPoint(pixel, Color(rr, rg, rb))
+
+  def randomCpChunk[F[_]](ps: Chunk[Pixel])(implicit F: Sync[F]): F[Chunk[ColoredPoint]] = F.delay {
+    ps.map {pixel => ColoredPoint(pixel, Color(Random.nextInt(256), Random.nextInt(256), Random.nextInt(256)))}
+  }
+
+  def showNoiseStreams[F[_]: ConcurrentEffect](sc: SafeCanvas[F]): F[Unit] = {
     val pixels = Stream.chunk{
       for {
         rows <- Chunk(0 to sc.width: _*)
@@ -149,15 +163,28 @@ object FrontendAppFs2WrappedCE extends IOApp {
     for {
       startTime <- Sync[F].delay(System.currentTimeMillis())
       _         <- pixels.covary[F].chunkN(640 * 480 / 5).evalMap { pChunk =>
-                      sc.updateChunk(pChunk.map(p => ColoredPoint(p, Color(255, 0, 0))))
+                      randomCpChunk(pChunk).flatMap{ cpChunk => sc.updateChunk(cpChunk)
+                      }
                     }.compile.drain
       endTime   <- Sync[F].delay(System.currentTimeMillis())
       _         <- putStrLn(s"show red streams: elapsed = ${endTime - startTime}")
     } yield ()
   }
 
+  import io.circe.generic.auto._
+  import io.circe.parser.decode
 
-  def getStreamBytes: Stream[IO, Byte] =
+  def showFractals[F[_]: ConcurrentEffect](sc: SafeCanvas[F]): F[Unit] =
+    (putStrLn[F]("computing and displaying fractals") >> getStreamBytes
+      .through(fs2.text.utf8Decode)
+      .through(fs2.text.lines)
+      .map(s => decode[ColoredPoint](s))
+      .collect { case Right(cp) => cp }
+      .chunkN(640 * 480 / 50)
+      .evalMap(cpChunk => sc.updateChunk(cpChunk))
+      .compile.drain)
+
+  def getStreamBytes[F[_]: ConcurrentEffect]: Stream[F, Byte] =
     for {
       reader <- Stream.eval(
           promiseToTask(Fetch.fetch(plotFractalsUrl)).map(_.body.getReader)
@@ -166,14 +193,14 @@ object FrontendAppFs2WrappedCE extends IOApp {
       b  <- Stream.emits(bb.array())
     } yield b
 
-  def processReader(reader: ReadableStreamReader[Uint8Array]): Stream[IO, ByteBuffer] =
+  def processReader[F[_]: ConcurrentEffect](reader: ReadableStreamReader[Uint8Array]): Stream[F, ByteBuffer] =
     Stream.eval(promiseToTask(reader.read())).repeat
       .takeWhile(_.done == false)
       .map { chunk =>
         ByteBuffer.wrap(new Int8Array(chunk.value.buffer).toArray)
       }
 
-  def promiseToTask[A](p: => Promise[A]): IO[A] = IO.fromFuture(IO(p.toFuture))
+  def promiseToTask[F[_], A](p: => Promise[A])(implicit F: ConcurrentEffect[F]): F[A] = F.liftIO(IO.fromFuture(IO(p.toFuture)))
 
 }
 
